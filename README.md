@@ -1,75 +1,33 @@
-# React + TypeScript + Vite
+# EvalDoc · Prototipo 1, bloque alumno
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interfaz local basada en `design/evaldoc-prototype-1.pen`. Implementa la portada, el acceso y registro visuales, el panel del alumno y el flujo de evaluación docente.
 
-Currently, two official plugins are available:
+## Ejecutar
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Vite muestra la URL local al iniciar, normalmente `http://localhost:5173/`. Para verificar el código:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm run lint
+npm run build
 ```
+
+## Rutas
+
+| Ruta | Vista |
+| --- | --- |
+| `/` | Portada |
+| `/login` | Inicio de sesión demo |
+| `/register` | Registro demo |
+| `/student` | Panel del alumno |
+| `/student/evaluations` | Mis evaluaciones |
+| `/student/evaluations/:id` | Encuesta de 15 preguntas |
+| `/student/evaluations/:id/success` | Confirmación de envío |
+
+El acceso y el registro llevan al panel demo sin crear cuentas. Los datos están tipados en `src/data/mock`. La encuesta mantiene las respuestas solo en memoria durante el recorrido; `localStorage` guarda únicamente los identificadores de las evaluaciones marcadas como completadas en este navegador. No hay autenticación, base de datos ni servicios externos.
+
+La escala de todas las preguntas es de 0 a 10: `0`, `2.5`, `5`, `7.5` y `10`.

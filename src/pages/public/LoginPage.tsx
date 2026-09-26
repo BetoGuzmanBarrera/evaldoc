@@ -1,0 +1,10 @@
+import { useState, type FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Brand } from '../../components/ui/Brand'
+
+export function LoginPage() {
+  const navigate = useNavigate()
+  const [message, setMessage] = useState('')
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); navigate('/student') }
+  return <main className="login-page"><div className="login-layout"><section className="login-brand-panel"><Brand inverse /><div><h1>Evaluaciones confiables.<br />Decisiones que mejoran la educación.</h1><p>Información protegida · Evaluación anónima · Resultados agregados</p></div></section><section className="login-card surface" aria-labelledby="login-title"><div className="auth-mobile-brand"><Brand /></div><h2 id="login-title">Iniciar sesión</h2><p className="auth-subtitle">Accede con tus credenciales institucionales</p><form onSubmit={onSubmit}><label className="field"><span>Correo institucional o número de cuenta</span><input type="text" name="account" autoComplete="username" placeholder="alberto@institucion.edu.mx" required /></label><label className="field"><span>Contraseña</span><input type="password" name="password" autoComplete="current-password" placeholder="••••••••" required /></label><div className="login-options"><label className="check-label"><input type="checkbox" defaultChecked /> Recordarme</label><button className="text-button" type="button" onClick={() => setMessage('La recuperación de contraseña estará disponible en una próxima versión.')}>¿Olvidaste tu contraseña?</button></div>{message && <p className="form-note" role="status">{message}</p>}<button className="button button-primary auth-submit" type="submit">Iniciar sesión</button></form><div className="auth-separator"><span>o</span></div><button className="button button-outline google-button" type="button" onClick={() => setMessage('El acceso con Google estará disponible en una próxima versión.')}>Continuar con Google</button><p className="register-prompt">¿No tienes cuenta? <Link to="/register">Registrarse</Link></p></section></div></main>
+}

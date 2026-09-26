@@ -1,111 +1,51 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import "tailwindcss";
+@import "./styles/public.css";
+@import "./styles/student.css";
+@import "./styles/survey.css";
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
-}
+:root{font-family:Inter,Arial,sans-serif;color:#0B0F14;background:#F6F8FB;font-synthesis:none;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;--primary:#2563EB;--navy:#17365D;--ink:#0B0F14;--muted:#667085;--bg:#F6F8FB;--border:#E5E7EB;--success:#16A34A;--danger:#DC2626;--warning:#F59E0B}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;min-width:320px}
+button,input,select{font:inherit}
+button{cursor:pointer}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,p{margin:0}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #93C5FD;outline-offset:3px}
+.button{min-height:44px;padding:0 18px;border-radius:12px;border:1px solid transparent;display:inline-flex;align-items:center;justify-content:center;gap:9px;font-size:14px;font-weight:600;white-space:nowrap;transition:background .16s,transform .16s,border-color .16s}
+.button:hover{transform:translateY(-1px)}
+.button-primary{background:var(--primary);color:white}
+.button-primary:hover{background:#1D4ED8}
+.button-outline{background:white;color:var(--ink);border-color:var(--border)}
+.button-outline:hover{border-color:#A9BCD8;background:#F8FAFC}
+.button-plain{background:transparent;color:var(--ink)}
+.button:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.button-small{min-height:34px;border-radius:9px;padding:0 14px;font-size:13px}
+.surface{background:white;border:1px solid #E8ECF2;border-radius:16px;box-shadow:0 4px 20px rgba(23,54,93,.035)}
+.brand{display:inline-flex;align-items:center;gap:10px;color:var(--navy);font-size:22px;font-weight:700;letter-spacing:-.6px;white-space:nowrap}
+.brand-mark{width:32px;height:32px;border-radius:9px;background:var(--primary);display:grid;place-items:center;color:white;flex:none}
+.brand-inverse{color:white}
+.eyebrow{color:var(--primary);font-size:12px;font-weight:700;letter-spacing:1.1px}
+.section-between{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.section-between h2{font-size:16px;font-weight:700}
+.section-between strong{font-size:14px;color:var(--primary)}
+.progress-track{height:9px;width:100%;border-radius:100px;background:#E9EEF5;overflow:hidden}
+.progress-track>span{height:100%;display:block;background:var(--primary);border-radius:inherit;transition:width .2s}
+.icon-button{border:0;background:transparent;display:inline-grid;place-items:center;width:44px;height:44px;border-radius:9px}
+.field{display:flex;flex-direction:column;gap:7px;min-width:0}
+.field>span:first-child{font-size:13px;font-weight:600;color:var(--ink)}
+.field>input,.field>select,.password-control{height:46px;width:100%;border:1px solid #D8DEE8;border-radius:10px;background:white;color:var(--ink)}
+.field>input,.field>select{padding:0 14px}
+.field input::placeholder{color:#98A2B3}
+.field>input:focus,.field>select:focus,.password-control:focus-within{border-color:var(--primary)}
+.password-control{display:flex;align-items:center}
+.password-control input{min-width:0;flex:1;height:100%;border:0;background:transparent;padding:0 14px;outline:0}
+.password-control button{border:0;background:transparent;color:var(--muted);width:44px;height:44px;display:grid;place-items:center}
+.check-label{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;cursor:pointer}
+.check-label input{width:16px;height:16px;accent-color:var(--primary)}
+.form-error{color:#B91C1C;font-size:13px;font-weight:600}
+.form-note{color:var(--navy);font-size:12px;background:#EFF6FF;padding:10px;border-radius:8px}
+.simple-state{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:24px;text-align:center}
+.simple-state h1{font-size:26px}
+@media(min-width:821px){.landing-menu-toggle.icon-button,.mobile-menu.icon-button,.sidebar-close.icon-button{display:none}}
+@media(max-width:600px){.button{min-height:46px}.brand{font-size:19px}.brand-mark{width:30px;height:30px}}
