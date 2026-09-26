@@ -1,7 +1,6 @@
-import { useState, type ReactNode } from 'react'
-import { AppHeader } from './AppHeader'
-import { AppSidebar } from './AppSidebar'
+import type { ReactNode } from 'react'
+import { studentDashboard } from '../../data/mock/studentDashboard'
+import { PortalLayout } from './PortalLayout'
 export function StudentLayout({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
-  const [menuOpen, setMenuOpen] = useState(false)
-  return <div className="app-shell"><AppSidebar open={menuOpen} onClose={() => setMenuOpen(false)} /><main className="app-main"><AppHeader title={title} subtitle={subtitle} onMenuClick={() => setMenuOpen(true)} />{children}</main></div>
+  return <PortalLayout role="student" title={title} subtitle={subtitle} period={studentDashboard.period} avatarLabel="Perfil de Alberto Guzman">{children}</PortalLayout>
 }

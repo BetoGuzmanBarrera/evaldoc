@@ -6,6 +6,9 @@ import { StudentDashboardPage } from './pages/student/StudentDashboardPage'
 import { EvaluationsPage } from './pages/student/EvaluationsPage'
 import { SurveyPage } from './pages/student/SurveyPage'
 import { EvaluationSuccessPage } from './pages/student/EvaluationSuccessPage'
+import { TeacherDashboardPage } from './pages/teacher/TeacherDashboardPage'
+import { TeacherResultPage } from './pages/teacher/TeacherResultPage'
+import { TeacherHistoryPage } from './pages/teacher/TeacherHistoryPage'
 
 export default function App() {
   return <Routes>
@@ -16,6 +19,9 @@ export default function App() {
     <Route path="/student/evaluations" element={<EvaluationsPage />} />
     <Route path="/student/evaluations/:id" element={<SurveyPage />} />
     <Route path="/student/evaluations/:id/success" element={<EvaluationSuccessPage />} />
+    <Route path="/teacher" element={<TeacherDashboardPage />} />
+    <Route path="/teacher/results/:id" element={<TeacherResultPage />} />
+    <Route path="/teacher/history" element={<TeacherHistoryPage />} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>
 }
