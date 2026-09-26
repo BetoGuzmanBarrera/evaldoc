@@ -1,0 +1,73 @@
+.institutional-shell .sidebar-link:not(.active){color:#A9BAD0;font-weight:400}
+.institutional-shell .sidebar-link:not(.active):not(.sidebar-placeholder):hover{background:#2B4F7A;color:white}
+.institutional-shell .period-chip{display:none}
+.institutional-content{display:flex;flex-direction:column;gap:20px;min-width:0}
+.institutional-action-buttons{display:flex;align-items:center;gap:9px}
+.institutional-action-buttons .button{padding:0 13px}
+.institutional-filters{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;padding:12px;min-width:0}
+.institutional-filters label{min-width:0}
+.institutional-filters select{width:100%;height:40px;border:1px solid var(--border);border-radius:10px;background:#F8FAFC;color:#667085;padding:0 12px;font-size:12px;font-weight:600}
+.institutional-filters-embedded{grid-template-columns:repeat(4,minmax(0,1fr));padding:0}
+.institutional-metrics .metric-card{min-height:130px}
+.institutional-chart-grid{display:grid;grid-template-columns:minmax(0,2.7fr) minmax(0,1fr);gap:16px;min-width:0}
+.institutional-participation-panel,.institutional-score-panel{height:250px;padding:20px;min-width:0}
+.institutional-participation-panel h2,.institutional-score-panel h2,.institutional-table-panel h2,.institutional-section-title{font-size:17px;line-height:1.3;font-weight:700}
+.institutional-bar-list{list-style:none;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;height:177px;margin:9px 0 0;padding:0 8px}
+.institutional-bar-list li{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-width:0;gap:7px}
+.institutional-bar-column{height:150px;width:100%;display:flex;align-items:flex-end;justify-content:center}
+.institutional-bar{display:block;width:30px;max-width:72%;border-radius:6px 6px 2px 2px;background:#BCD0F5}
+.institutional-bar.is-highlighted{background:var(--primary)}
+.institutional-bar-label{font-size:11px;font-weight:700;color:#778398;white-space:nowrap;text-align:center}
+.institutional-score-panel{display:flex;flex-direction:column;align-items:center}
+.institutional-score-panel h2{align-self:flex-start;white-space:nowrap}
+.institutional-score-ring{width:132px;height:132px;margin:13px auto 10px;background:var(--primary);border-radius:50%;display:grid;place-items:center;flex:none}
+.institutional-score-ring span{width:88px;height:88px;border-radius:50%;background:white}
+.institutional-score-panel strong{font-size:19px;line-height:1.2}
+.institutional-table-panel{overflow:hidden;min-width:0}
+.institutional-table-panel h2{padding:18px 18px 16px}
+.institutional-table-scroll{width:100%;overflow-x:auto}
+.institutional-table-scroll:focus-visible{outline:3px solid #93C5FD;outline-offset:-3px}
+.institutional-table-scroll table{width:100%;border-collapse:collapse;font-size:12px}
+.institutional-table-scroll thead{background:#F8FAFC;color:var(--muted)}
+.institutional-table-scroll th,.institutional-table-scroll td{padding:13px 18px;text-align:left;white-space:nowrap}
+.institutional-table-scroll thead th{font-size:11px;font-weight:700}
+.institutional-table-scroll tbody th{font-weight:600;color:var(--ink)}
+.institutional-table-scroll tbody td{color:var(--muted)}
+.institutional-table-scroll tbody tr{border-top:1px solid var(--border)}
+.institutional-empty{padding:16px 18px;color:var(--muted);font-size:13px}
+.hr-overview{display:flex;flex-direction:column;gap:20px;padding:14px 20px 20px}
+.hr-overview .institutional-metrics{margin-top:14px}
+.hr-category-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.hr-category{min-height:97px;display:flex;align-items:center;gap:13px;padding:15px;border-radius:14px}
+.hr-category-green{background:#DCFCE7}.hr-category-blue{background:#DBEAFE}.hr-category-yellow{background:#FEF3C7}.hr-category-red{background:#FEE2E2}
+.hr-category-dot{width:10px;height:10px;border-radius:50%;flex:none;background:#16A34A}
+.hr-category-blue .hr-category-dot{background:var(--primary)}.hr-category-yellow .hr-category-dot{background:#F59E0B}.hr-category-red .hr-category-dot{background:#DC2626}
+.hr-category div{display:flex;flex-direction:column;gap:3px}
+.hr-category strong{font-size:24px;line-height:1.1}
+.hr-category div>span{color:var(--muted);font-size:12px;font-weight:600}
+.institutional-text-button{border:0;background:transparent;color:var(--muted);padding:5px 0;text-decoration:underline;text-underline-offset:3px}
+.institutional-text-button:hover{color:var(--primary)}
+.hr-disclaimer{display:flex;align-items:flex-start;gap:10px;border-radius:13px;background:#FFFBEB;color:#854D0E;padding:14px 16px;font-size:12px;font-weight:600;line-height:1.5}
+.hr-disclaimer svg{color:#F59E0B;flex:none}
+.admin-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;min-width:0}
+.admin-search{width:380px;max-width:100%;height:42px;border:1px solid var(--border);border-radius:11px;background:white;display:flex;align-items:center;gap:10px;padding:0 15px;color:var(--muted)}
+.admin-search input{border:0;outline:0;min-width:0;width:100%;height:100%;background:transparent;color:var(--ink);font-size:13px}
+.admin-search:focus-within{outline:3px solid #93C5FD;outline-offset:3px}
+.admin-search input::placeholder{color:var(--muted)}
+.admin-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--muted);font-size:12px}
+.admin-pagination nav{display:flex;align-items:center;gap:5px}
+.admin-pagination button,.admin-pagination nav span{min-width:35px;height:35px;display:grid;place-items:center;border:1px solid var(--border);border-radius:9px;background:white;color:var(--muted);font-weight:700;font-size:12px}
+.admin-pagination button.active{background:var(--primary);color:white;border-color:var(--primary)}
+.admin-pagination button:disabled{cursor:default}
+.institutional-section-title{margin-bottom:14px}
+.institution-card-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.institution-card{min-width:0;min-height:174px;padding:18px;display:flex;flex-direction:column;align-items:flex-start}
+.institution-card-icon{width:34px;height:34px;display:grid;place-items:center;background:#EFF6FF;color:var(--primary);border-radius:9px;margin-bottom:10px}
+.institution-card h2{font-size:15px;line-height:1.3;font-weight:700}
+.institution-card p{font-size:12px;color:var(--muted);margin-top:4px}
+.institution-card-participation{width:100%;display:flex;justify-content:space-between;gap:6px;margin-top:auto;color:var(--muted);font-size:12px}
+.institution-card-participation strong{color:var(--primary)}
+.institution-card .progress-track{height:7px;margin-top:8px}
+@media(max-width:1150px){.institutional-chart-grid{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr)}.institution-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.institutional-filters{grid-template-columns:repeat(3,minmax(0,1fr))}.institutional-filters-embedded{grid-template-columns:repeat(2,minmax(0,1fr))}.hr-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:820px){.institutional-chart-grid{grid-template-columns:1fr}.institutional-shell .app-header{flex-wrap:wrap}.institutional-shell .custom-header-actions{margin-left:auto}.institutional-participation-panel,.institutional-score-panel{height:250px}}
+@media(max-width:600px){.institutional-shell .app-header>.custom-header-actions{display:flex;margin:18px 0 0;justify-content:flex-start}.institutional-shell .custom-header-actions .button{font-size:12px;padding:0 12px}.institutional-content{gap:18px}.institutional-metrics{grid-template-columns:1fr}.institutional-metrics .metric-card{min-height:104px}.institutional-filters,.institutional-filters-embedded{grid-template-columns:1fr}.institutional-filters{padding:12px}.institutional-filters-embedded{padding:0}.institutional-participation-panel,.institutional-score-panel{padding:18px}.institutional-bar-list{padding:0;gap:2px}.institutional-bar{width:23px}.institutional-bar-label{font-size:10px}.hr-overview{padding:12px;gap:18px}.hr-overview .institutional-metrics{margin-top:0}.hr-category-grid{gap:10px}.hr-category{min-height:82px;padding:11px;gap:8px}.hr-category strong{font-size:21px}.hr-category div>span{font-size:11px}.admin-toolbar{flex-direction:column;align-items:stretch}.admin-search{width:100%}.admin-pagination{align-items:flex-start;flex-direction:column}.institution-card-grid{grid-template-columns:1fr}.institutional-score-panel h2{white-space:normal}}
