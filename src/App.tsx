@@ -9,6 +9,10 @@ import { EvaluationSuccessPage } from './pages/student/EvaluationSuccessPage'
 import { TeacherDashboardPage } from './pages/teacher/TeacherDashboardPage'
 import { TeacherResultPage } from './pages/teacher/TeacherResultPage'
 import { TeacherHistoryPage } from './pages/teacher/TeacherHistoryPage'
+import { CoordinatorDashboardPage } from './pages/coordinator/CoordinatorDashboardPage'
+import { HrDashboardPage } from './pages/hr/HrDashboardPage'
+import { AdminDashboardPage } from './pages/admin/AdminDashboardPage'
+import { InstitutionsPage } from './pages/admin/InstitutionsPage'
 
 export default function App() {
   return <Routes>
@@ -22,6 +26,10 @@ export default function App() {
     <Route path="/teacher" element={<TeacherDashboardPage />} />
     <Route path="/teacher/results/:id" element={<TeacherResultPage />} />
     <Route path="/teacher/history" element={<TeacherHistoryPage />} />
+    <Route path="/coordinator" element={<CoordinatorDashboardPage />} />
+    <Route path="/hr" element={<HrDashboardPage />} />
+    <Route path="/admin" element={<AdminDashboardPage />} />
+    <Route path="/institutions" element={<InstitutionsPage />} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>
 }

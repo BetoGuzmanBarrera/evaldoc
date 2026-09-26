@@ -68,3 +68,68 @@ export interface TeacherHistoryData {
   periods: TeacherHistoryPeriod[]
   trendMessage: string
 }
+
+export interface DashboardFilterOption { value: string; label: string }
+export interface DashboardFilter { id: string; label: string; options: DashboardFilterOption[] }
+
+export interface CoordinatorDashboardData {
+  period: string
+  participation: number
+  evaluations: number
+  activeStudents: number
+  evaluatedTeachers: number
+  averageScore: number
+  filters: DashboardFilter[]
+  institutions: { id: string; label: string; participation: number }[]
+  topTeachers: { id: string; rank: number; name: string; institution: string; score: number; responses: number }[]
+}
+
+export type TeacherCategory = 'Excelente' | 'Bueno' | 'Suficiente' | 'No suficiente'
+export interface HrDashboardData {
+  period: string
+  evaluatedTeachers: number
+  institutionalAverage: number
+  improvingTeachers: number
+  outstandingTeachers: number
+  filters: DashboardFilter[]
+  categories: { label: TeacherCategory; count: number; tone: 'green' | 'blue' | 'yellow' | 'red' }[]
+  teachers: { id: string; name: string; institution: string; score: number; category: TeacherCategory; trend: string; subjects: number }[]
+}
+
+export interface AdminUser {
+  id: string
+  name: string
+  email: string
+  institution: string
+  role: 'Alumno' | 'Docente' | 'Coordinación' | 'Administrador'
+  status: 'Activo' | 'Inactivo'
+  lastAccess: string
+}
+export interface AdminDashboardData {
+  period: string
+  users: number
+  institutions: number
+  teachers: number
+  students: number
+  sampleUsers: AdminUser[]
+}
+
+export interface InstitutionOverview {
+  id: string
+  name: string
+  shortName: string
+  campuses: number
+  participation: number
+  teachers: number
+  students: number
+  evaluations: number
+  averageScore: number
+}
+export interface InstitutionsDashboardData {
+  period: string
+  students: number
+  teachers: number
+  evaluations: number
+  averageParticipation: number
+  institutions: InstitutionOverview[]
+}

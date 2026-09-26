@@ -3,6 +3,7 @@
 @import "./styles/student.css";
 @import "./styles/survey.css";
 @import "./styles/teacher.css";
+@import "./styles/institutional.css";
 
 :root{font-family:Inter,Arial,sans-serif;color:#0B0F14;background:#F6F8FB;font-synthesis:none;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;--primary:#2563EB;--navy:#17365D;--ink:#0B0F14;--muted:#667085;--bg:#F6F8FB;--border:#E5E7EB;--success:#16A34A;--danger:#DC2626;--warning:#F59E0B}
 *{box-sizing:border-box}
