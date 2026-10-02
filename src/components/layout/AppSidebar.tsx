@@ -1,6 +1,8 @@
-import { BarChart3, BookOpen, Building2, ClipboardList, History, House, UserRound, UsersRound, X, type LucideIcon } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { BarChart3, BookOpen, Building2, ClipboardList, History, House, LogOut, UserRound, UsersRound, X, type LucideIcon } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
 import { Brand } from '../ui/Brand'
+import { useAuth } from '../../hooks/useAuth'
 
 export type PortalRole = 'student' | 'teacher' | 'coordinator' | 'hr' | 'admin'
 export type PortalNav = 'home' | 'results' | 'history' | 'institutions'
@@ -9,6 +11,9 @@ export type TeacherNav = Extract<PortalNav, 'home' | 'results' | 'history'>
 interface InstitutionalNavItem { label: string; icon: LucideIcon; to?: string; active?: PortalNav }
 
 export function AppSidebar({ open, onClose, role, active }: { open: boolean; onClose: () => void; role: PortalRole; active?: PortalNav }) {
+  const navigate = useNavigate()
+  const { profile, signOut } = useAuth()
+  const [logoutError, setLogoutError] = useState('')
   const institutionalItems: InstitutionalNavItem[] = role === 'admin' ? [
     { label: 'Inicio', icon: House, to: '/admin', active: 'home' },
     { label: 'Instituciones', icon: Building2, to: '/institutions', active: 'institutions' },
@@ -47,6 +52,15 @@ export function AppSidebar({ open, onClose, role, active }: { open: boolean; onC
             : <span key={item.label} className="sidebar-link sidebar-placeholder" aria-disabled="true"><Icon size={18} aria-hidden="true" /> {item.label}</span>
         })}
       </nav>}
+      <div className="sidebar-footer">
+        <button className="sidebar-link sidebar-logout" type="button" onClick={async () => {
+          setLogoutError('')
+          try { await signOut(); onClose(); navigate('/login', { replace: true }) }
+          catch { setLogoutError('No se pudo cerrar la sesión.') }
+        }}><LogOut size={18} aria-hidden="true" /> Cerrar sesión</button>
+        {logoutError && <p className="sidebar-error" role="alert">{logoutError}</p>}
+        <div className="sidebar-user"><span className="avatar" aria-hidden="true">{profile?.full_name.slice(0, 1).toUpperCase()}</span><div><strong>{profile?.full_name}</strong><small>{roleLabel}</small></div></div>
+      </div>
     </aside>
   </>
 }
