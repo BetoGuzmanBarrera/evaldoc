@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { homeForRoles } from '../../auth/types'
+import { homeForIdentity } from '../../auth/types'
 import { authMessage } from '../../auth/messages'
 import { Brand } from '../../components/ui/Brand'
 import { useAuth } from '../../hooks/useAuth'
@@ -8,16 +8,16 @@ import { supabase } from '../../lib/supabase'
 
 export function LoginPage() {
   const navigate = useNavigate()
-  const { session, roles, loading, error: identityError, signOut } = useAuth()
+  const { session, profile, roles, loading, error: identityError, signOut } = useAuth()
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    if (session && !loading && roles.length > 0) {
-      navigate(homeForRoles(roles), { replace: true })
+    if (session && !loading && profile && roles.length > 0) {
+      navigate(homeForIdentity(profile, roles), { replace: true })
     }
-  }, [session, roles, loading, navigate])
+  }, [session, profile, roles, loading, navigate])
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()

@@ -39,3 +39,7 @@ export function homeForRoles(roles: RoleCode[]): string {
   const role = rolePriority.find((candidate) => roles.includes(candidate))
   return role ? roleHome[role] : '/login'
 }
+
+export function homeForIdentity(profile: AuthProfile, roles: RoleCode[]): string {
+  return profile.status === 'pending' ? '/pending' : homeForRoles(roles)
+}

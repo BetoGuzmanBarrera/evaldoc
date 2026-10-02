@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Info } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { authMessage } from '../../auth/messages'
-import { homeForRoles } from '../../auth/types'
+import { homeForIdentity } from '../../auth/types'
 import { Brand } from '../../components/ui/Brand'
 import { useAuth } from '../../hooks/useAuth'
 import { getRegistrationInstitutions, type RegistrationInstitution } from '../../lib/registrationInstitutions'
@@ -10,7 +10,7 @@ import { supabase } from '../../lib/supabase'
 
 export function RegisterPage() {
   const navigate = useNavigate()
-  const { session, roles, loading } = useAuth()
+  const { session, profile, roles, loading } = useAuth()
   const [institutions, setInstitutions] = useState<RegistrationInstitution[]>([])
   const [institutionsLoading, setInstitutionsLoading] = useState(true)
   const [institutionsError, setInstitutionsError] = useState('')
@@ -35,10 +35,10 @@ export function RegisterPage() {
   }, [])
 
   useEffect(() => {
-    if (session && !loading && roles.length > 0) {
-      navigate(homeForRoles(roles), { replace: true })
+    if (session && !loading && profile && roles.length > 0) {
+      navigate(homeForIdentity(profile, roles), { replace: true })
     }
-  }, [session, roles, loading, navigate])
+  }, [session, profile, roles, loading, navigate])
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()

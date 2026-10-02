@@ -12,6 +12,7 @@ export function RequireRole({ allowed }: { allowed: RoleCode[] }) {
 
   if (loading) return <main className="simple-state" role="status"><Brand /><p>Cargando tu sesión…</p></main>
   if (!session) return <Navigate to="/login" state={{ from: location.pathname }} replace />
+  if (profile?.status === 'pending' && !error) return <Navigate to="/pending" replace />
   if (error || !profile || roles.length === 0 || profile.status === 'inactive') {
     return <main className="simple-state"><Brand /><h1>Tu cuenta no está disponible</h1>
       <p>{profile?.status === 'inactive' ? 'Tu cuenta está inactiva. Contacta a tu institución.' : error ?? 'No pudimos cargar tu perfil.'}</p>
