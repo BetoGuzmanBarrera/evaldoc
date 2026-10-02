@@ -5,10 +5,12 @@ import { TeacherLayout } from '../../components/layout/TeacherLayout'
 import { TeacherPrivacyNotice } from '../../components/teacher/TeacherPrivacyNotice'
 import { MetricCard } from '../../components/ui/MetricCard'
 import { teacherDashboard } from '../../data/mock/teacherDashboard'
+import { useAuth } from '../../hooks/useAuth'
 
 export function TeacherDashboardPage() {
+  const { profile } = useAuth()
   const data = teacherDashboard
-  return <TeacherLayout active="home" title="Panel de Docente" subtitle={data.name}>
+  return <TeacherLayout active="home" title="Panel de Docente" subtitle={profile?.full_name ?? data.name}>
     <div className="teacher-content teacher-dashboard">
       <div className="metric-grid teacher-metric-grid" aria-label="Resumen del periodo">
         <MetricCard label="Calificación promedio" value={`${data.averageScore.toFixed(1)} / 10`} caption={`↑ ${data.averageChange.toFixed(1)} vs. anterior`} />

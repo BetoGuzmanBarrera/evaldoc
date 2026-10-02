@@ -9,6 +9,8 @@
 .sidebar-link:hover,.sidebar-link.active{background:#2B4F7A;color:white}
 .sidebar-placeholder{color:#A9BAD0;font-weight:400;cursor:default}.sidebar-placeholder:hover{background:transparent;color:#A9BAD0}.sidebar-mobile-evaluations{display:none}
 .sidebar-footer{margin-top:auto;display:flex;flex-direction:column;gap:18px}
+.sidebar-logout{width:100%;border:0;background:transparent;text-align:left}
+.sidebar-error{padding:0 12px;color:#FECACA;font-size:12px}
 .sidebar-user{display:flex;align-items:center;gap:10px;border-top:1px solid #47617D;padding:20px 12px 0}
 .avatar,.header-avatar{display:grid;place-items:center;border-radius:50%;font-size:12px;font-weight:700;flex:none}
 .avatar{width:36px;height:36px;background:#4C6C91;color:white}
