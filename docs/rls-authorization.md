@@ -1,8 +1,8 @@
 # Autorización RLS multiinstitución
 
-La migración 20261002215313_multiinstitution_rls.sql aplica mínimo privilegio a las 16 tablas públicas sin alterar migraciones previas. La autorización proviene de auth.uid(), profiles, user_roles, roles y relaciones académicas reales. Metadata, parámetros del cliente y la prioridad visual de roles no conceden acceso. Admin administra solo su institución: no existe superadmin global.
+La migración `20261002215313_multiinstitution_rls.sql` establece mínimo privilegio sobre las 16 tablas públicas. La migración `20261002223647_student_real_evaluations.sql` añade dos RPC y triggers de integridad sin añadir políticas RLS. La autorización se resuelve desde `auth.uid()`, `profiles`, `user_roles`, `roles` y relaciones académicas reales; ni metadata ni el estado del frontend conceden acceso. Cada administrador opera dentro de su institución.
 
-## Lectura por rol
+## Lectura directa por rol
 
 | Tabla | Anon | Student activo | Teacher activo | Coordinator activo | HR activo | Admin activo |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -23,22 +23,16 @@ La migración 20261002215313_multiinstitution_rls.sql aplica mínimo privilegio 
 | evaluations | — | — | — | — | — | — |
 | evaluation_answers | — | — | — | — | — | — |
 
-El estudiante obtiene nombres mínimos de docentes mediante public.my_evaluation_teachers(): solo teaching_assignment_id, teacher_id y teacher_name de sus grupos inscritos, con docentes activos y rol teacher. No se abren perfiles arbitrarios. Coordinación y administración aún no leen perfiles de terceros ni inscripciones. HR ve su institución, identidad propia, catálogo de roles y periodos; sus métricas serán agregadas más adelante.
+Una cuenta `pending` puede iniciar sesión y consultar identidad, rol e institución propios para mostrar su estado, pero no obtiene catálogo académico ni puede enviar evaluaciones. Una cuenta inactiva, sin rol `student`, no inscrita o de otra institución tampoco puede usar la RPC del alumno. La asignación y activación institucional siguen siendo procesos administrativos separados del registro público.
 
-Una cuenta pending puede autenticarse y consultar su propia identidad, rol e institución para mostrar el estado, pero ninguna política académica la autoriza. Una cuenta inactive o activa sin rol tampoco obtiene datos académicos. El registro no comprueba afiliación institucional; la validación y activación administrativas seguras siguen pendientes.
+## RPC del alumno
 
-## Barreras de base de datos
+`public.my_student_evaluations()` no recibe identificador de alumno o institución: parte de `auth.uid()` y solo retorna materia, docente, grupo, periodo, plantilla, plazo, estado e ID de evaluación propio. `public.submit_evaluation(uuid, uuid, jsonb)` recibe asignación, ventana y 15 respuestas; la función privada determina el alumno desde Auth y valida toda la relación académica, ventana y cuestionario antes de escribir. Un UUID manual ajeno no amplía acceso. El cliente no tiene INSERT/UPDATE/DELETE directos y las respuestas son privadas aun para el alumno después del envío.
 
-La migración revoca los privilegios de tabla heredados para PUBLIC, anon y authenticated, y solo concede SELECT a las superficies anteriores. No concede INSERT, UPDATE ni DELETE a clientes. Evaluations y evaluation_answers carecen incluso de SELECT y de políticas cliente: student_id y las respuestas individuales siguen internos. Los resultados de docentes, coordinación y RRHH deberán exponerse mediante agregaciones futuras con protección de anonimato.
+Las implementaciones privadas son `SECURITY DEFINER`, propiedad de `postgres`, `search_path = ''`, con objetos calificados. Solo `authenticated` recibe `EXECUTE`; `PUBLIC` y `anon` están revocados. Los wrappers del esquema `public` son `SECURITY INVOKER`. Los triggers de integridad también son privados y no ejecutables por clientes. Los permisos de ejecución no sustituyen la validación interna de rol, estado, institución y matrícula.
 
-Las políticas restringen la institución propia, directa o indirectamente. Las plantillas globales (institution_id nulo) solo se ven si una ventana elegible propia las utiliza. El catálogo anónimo de instituciones activas es la excepción necesaria para el registro; las sesiones autenticadas solo ven su institución.
+## Políticas y límites
 
-Las funciones app_private.current_institution_id() y app_private.has_active_role(text) evitan recursión RLS. app_private.my_evaluation_teachers() aplica la proyección mínima. Las tres son SECURITY DEFINER, propiedad de postgres, con search_path vacío y referencias calificadas. No aceptan identificadores de usuario ni institución. EXECUTE está revocado a PUBLIC y anon y concedido a authenticated; el wrapper público de docentes es SECURITY INVOKER y solo puede ejecutarlo authenticated. El trigger de registro anterior conserva EXECUTE restringido. Las políticas envuelven llamadas constantes en SELECT para favorecer su evaluación por sentencia.
+Siguen existiendo las 15 políticas SELECT del Bloque 6, sin `USING (true)` general ni políticas de escritura cliente. Las funciones existentes `app_private.current_institution_id()`, `app_private.has_active_role(text)` y `app_private.my_evaluation_teachers()` preservan lectura restringida; el wrapper público de nombres docentes solo proyecta los asignados al alumno. `evaluations.student_id` sirve internamente para elegibilidad y RF03, pero ni la tabla ni respuestas individuales se exponen a docentes, coordinación, RRHH o administración. El futuro PR de resultados deberá usar únicamente agregados y defenderse de filtros que permitan reidentificar alumnos.
 
-Las cuatro políticas del Bloque 5 se conservaron. Solo se modificó el destinatario de institutions_public_signup_read, de anon y authenticated a anon; el filtro de instituciones activas sigue igual. Ninguna política se eliminó. Se añadieron once políticas SELECT: institutions_authenticated_own_read, campuses_structure_read, academic_periods_role_read, programs_role_read, subjects_role_read, groups_role_read, teaching_assignments_role_read, student_enrollments_own_read, evaluation_windows_role_read, survey_templates_role_read y survey_questions_role_read. Total: 15. RLS sigue habilitada en las 16 tablas, sin políticas de escritura ni USING (true).
-
-## Pruebas y límites
-
-supabase/tests/multiinstitution_rls.sql crea usuarios y registros A/B ficticios en una transacción que termina con ROLLBACK. Prueba consultas permitidas y denegadas, pending, ausencia de rol, UUID de otra institución, escalada mediante profiles y user_roles y falta de lectura directa de evaluaciones y respuestas. No agrega cuentas al seed. Los índices existentes cubren los filtros de institución, usuario, grupo, periodo y relaciones empleados; no se añadieron índices.
-
-El PR #7 debe implementar escrituras transaccionales seguras para evaluaciones y respuestas, validar inscripción, asignación, ventana, plantilla, pregunta, tipo y obligatoriedad, y exponer resultados agregados con umbrales de privacidad. También falta el proceso institucional de afiliación y activación y la asignación segura de roles privilegiados. Los dashboards siguen con mocks. El esquema todavía permite que una ventana referencie una plantilla de otra institución: ninguna política revela la plantilla, pero el flujo de escritura futuro debe impedir esa relación inválida. La clave service_role nunca llega al frontend.
+`supabase/tests/multiinstitution_rls.sql` cubre 66 casos de autorización del Bloque 6. `supabase/tests/student_real_evaluations.sql` añade los casos de escritura real y privacidad, con `ROLLBACK` final. El seed no contiene usuarios ficticios.
