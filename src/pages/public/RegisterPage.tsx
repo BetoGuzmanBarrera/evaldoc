@@ -1,9 +1,10 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Info } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { authMessage } from '../../auth/messages'
 import { meetsPasswordPolicy, passwordsMatch } from '../../auth/passwordPolicy'
 import { homeForIdentity } from '../../auth/types'
+import { TurnstileWidget, type TurnstileWidgetHandle } from '../../components/security/TurnstileWidget'
 import { Brand } from '../../components/ui/Brand'
 import { PasswordField } from '../../components/ui/PasswordField'
 import { useAuth } from '../../hooks/useAuth'
@@ -21,6 +22,8 @@ export function RegisterPage() {
   const [submitting, setSubmitting] = useState(false)
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const captcha = useRef<TurnstileWidgetHandle>(null)
   const mismatch = confirmation.length > 0 && !passwordsMatch(password, confirmation)
   const passwordReady = meetsPasswordPolicy(password) && passwordsMatch(password, confirmation)
 
@@ -63,12 +66,17 @@ export function RegisterPage() {
       setError('Revisa los requisitos y confirma la contraseña.')
       return
     }
+    if (!captchaToken) {
+      setError('Completa la verificación de seguridad para continuar.')
+      return
+    }
     setSubmitting(true)
     try {
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          captchaToken,
           emailRedirectTo: `${window.location.origin}/email-confirmation`,
           data: {
             institution_id: institutionId,
@@ -91,6 +99,7 @@ export function RegisterPage() {
     } catch {
       setError('No pudimos conectar con el servicio. Inténtalo de nuevo.')
     } finally {
+      captcha.current?.reset()
       setSubmitting(false)
     }
   }
@@ -114,9 +123,10 @@ export function RegisterPage() {
         <PasswordField label="Confirmar contraseña" name="confirmPassword" value={confirmation} onChange={setConfirmation} autoComplete="new-password" placeholder="Repite tu contraseña" error={mismatch ? 'Las contraseñas no coinciden.' : undefined} />
         <label className="check-label terms-check"><input type="checkbox" required /> Acepto términos y política de privacidad</label>
         <div className="role-note"><Info size={18} aria-hidden="true" /><span>Los roles administrativos, docentes y de coordinación deben ser validados por la institución.</span></div>
+        <TurnstileWidget ref={captcha} onTokenChange={setCaptchaToken} />
         {error && <p className="form-error" role="alert">{error}</p>}
         {success && <p className="form-note" role="status">{success}</p>}
-        <button className="button button-primary auth-submit" type="submit" disabled={submitting || institutionsLoading || institutions.length === 0 || !passwordReady}>{submitting ? 'Creando cuenta…' : 'Registrarse'}</button>
+        <button className="button button-primary auth-submit" type="submit" disabled={submitting || institutionsLoading || institutions.length === 0 || !passwordReady || !captchaToken}>{submitting ? 'Creando cuenta…' : 'Registrarse'}</button>
       </form>
     </section></main>
   </div>

@@ -14,6 +14,9 @@ export function authMessage(error: AuthError, action: 'login' | 'register'): str
   if (code === 'weak_password') {
     return 'Usa una contraseña más segura.'
   }
+  if (code === 'captcha_failed') {
+    return 'No pudimos verificar que eres una persona. Inténtalo de nuevo.'
+  }
   if (error.status === 0 || (error.status !== undefined && error.status >= 500)) {
     return 'No pudimos conectar con el servicio. Inténtalo de nuevo.'
   }
