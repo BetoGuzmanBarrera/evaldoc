@@ -1,48 +1,78 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Info } from 'lucide-react'
 import { InstitutionalLayout } from '../../components/layout/InstitutionalLayout'
 import { DataTable, type DataColumn } from '../../components/ui/DataTable'
+import { EmptyState } from '../../components/ui/EmptyState'
 import { FilterBar } from '../../components/ui/FilterBar'
+import { InstitutionalFeedback } from '../../components/ui/InstitutionalFeedback'
 import { MetricCard } from '../../components/ui/MetricCard'
-import { hrDashboard } from '../../data/mock/hrDashboard'
-import type { HrDashboardData } from '../../types'
+import { useInstitutionalData } from '../../hooks/useInstitutionalData'
+import {
+  loadHrMetrics, loadInstitutionalOptions, loadScoreSummary,
+  type HrCategory, type HrTeacherRow,
+} from '../../lib/institutionalDashboards'
+import type { DashboardFilter } from '../../types'
 
-type HrTeacher = HrDashboardData['teachers'][number]
+const categories: { label: HrCategory; tone: string; range: string }[] = [
+  { label: 'Excelente', tone: 'green', range: '9.0–10.0' },
+  { label: 'Bueno', tone: 'blue', range: '8.0–8.9' },
+  { label: 'Suficiente', tone: 'yellow', range: '7.0–7.9' },
+  { label: 'No Suficiente', tone: 'red', range: '0.0–6.9' },
+]
+const columns: DataColumn<HrTeacherRow>[] = [
+  { label: 'Docente', render: (teacher) => teacher.name },
+  { label: 'Promedio / 10', render: (teacher) => teacher.averageScore.toFixed(1) },
+  { label: 'Categoría', render: (teacher) => teacher.category },
+  { label: 'Indicador del proyecto', render: (teacher) => teacher.recommendation },
+  { label: 'Máximo de materias', render: (teacher) => teacher.maximumSubjects },
+  { label: 'Materias evaluadas', render: (teacher) => teacher.subjectCount },
+  { label: 'Respuestas', render: (teacher) => teacher.responseCount },
+]
 
 export function HrDashboardPage() {
-  const data = hrDashboard
-  const [filters, setFilters] = useState<Record<string, string>>({})
-  const [demoMessage, setDemoMessage] = useState('')
-  const institution = data.filters[0].options.find((item) => item.value === filters.institution)?.label
-  const teachers = data.teachers.filter((teacher) => (!institution || teacher.institution === institution) && (!filters.category || teacher.category === filters.category))
-  const columns: DataColumn<HrTeacher>[] = [
-    { label: 'Docente', render: (teacher) => teacher.name },
-    { label: 'Promedio / 10', render: (teacher) => teacher.score.toFixed(1) },
-    { label: 'Categoría', render: (teacher) => teacher.category },
-    { label: 'Tendencia', render: (teacher) => teacher.trend },
-    { label: 'Materias', render: (teacher) => teacher.subjects },
-    { label: 'Histórico', render: (teacher) => <button className="institutional-text-button" type="button" onClick={() => setDemoMessage('El histórico de ' + teacher.name + ' estará disponible en una próxima versión.')} aria-label={'Ver histórico de ' + teacher.name}>Ver</button> },
+  const [period, setPeriod] = useState('')
+  const [campus, setCampus] = useState('')
+  const [category, setCategory] = useState('')
+  const loader = useCallback(async () => {
+    const [options, teachers, scores] = await Promise.all([
+      loadInstitutionalOptions(), loadHrMetrics(period || null, campus || null),
+      loadScoreSummary({ period, campus }),
+    ])
+    return { options, teachers, scores }
+  }, [period, campus])
+  const { data, loading, error, reload } = useInstitutionalData(`${period}:${campus}`, loader)
+  const teachers = data?.teachers.filter((teacher) => !category || teacher.category === category) ?? []
+  const filters: DashboardFilter[] = [
+    { id: 'campus', label: 'Campus', options: (data?.options ?? []).filter((item) => item.scope === 'campus').map((item) => ({ value: item.id, label: item.label })) },
+    { id: 'category', label: 'Categoría', options: categories.map((item) => ({ value: item.label, label: item.label })) },
+    { id: 'period', label: 'Periodo', options: (data?.options ?? []).filter((item) => item.scope === 'period').map((item) => ({ value: item.id, label: item.label })) },
   ]
+  const periodName = data?.options.find((item) => item.id === period)?.label ?? 'Todos los periodos'
 
-  return <InstitutionalLayout role="hr" title="Recursos Humanos" subtitle="Indicadores consolidados para acompañamiento docente" period={data.period}>
+  return <InstitutionalLayout role="hr" title="Recursos Humanos" subtitle="Indicadores consolidados para acompañamiento docente" period={periodName}>
     <div className="institutional-content">
-      <section className="surface hr-overview" aria-label="Resumen de recursos humanos">
-        <FilterBar embedded filters={data.filters} values={filters} onChange={(id, value) => setFilters((current) => ({ ...current, [id]: value }))} />
-        <div className="metric-grid institutional-metrics" aria-label="Indicadores principales">
-          <MetricCard label="Docentes evaluados" value={data.evaluatedTeachers} caption="87% de cobertura" />
-          <MetricCard label="Promedio institucional" value={data.institutionalAverage.toFixed(1) + ' / 10'} caption="↑ 0.2 este periodo" />
-          <MetricCard label="Docentes con mejora" value={data.improvingTeachers} caption="58% del total" />
-          <MetricCard label="Docentes destacados" value={data.outstandingTeachers} caption="16% del total" />
-        </div>
-        <div className="hr-category-grid" aria-label="Docentes por categoría">
-          {data.categories.map((category) => <div className={'hr-category hr-category-' + category.tone} key={category.label}>
-            <span className="hr-category-dot" aria-hidden="true" /><div><strong>{category.count}</strong><span>{category.label}</span></div>
-          </div>)}
-        </div>
-      </section>
-      {demoMessage && <p className="form-note" role="status">{demoMessage}</p>}
-      <DataTable title="Indicadores docentes" columns={columns} rows={teachers} getRowKey={(teacher) => teacher.id} minWidth={800} />
-      <p className="hr-disclaimer"><Info size={18} aria-hidden="true" /> Estos indicadores son herramientas de apoyo y contexto; no representan decisiones laborales automáticas.</p>
+      <InstitutionalFeedback loading={loading} error={error} onRetry={reload} />
+      {data && <>
+        <section className="surface hr-overview" aria-label="Resumen de recursos humanos">
+          <FilterBar embedded filters={filters} values={{ campus, category, period }} onChange={(id, value) => {
+            if (id === 'campus') setCampus(value)
+            if (id === 'category') setCategory(value)
+            if (id === 'period') setPeriod(value)
+          }} />
+          <div className="metric-grid institutional-metrics" aria-label="Indicadores principales">
+            <MetricCard label="Docentes evaluados" value={data.teachers.length} caption="Con resultados publicables" />
+            <MetricCard label="Promedio institucional" value={data.scores.averageScore === null ? '— / 10' : data.scores.averageScore.toFixed(1) + ' / 10'} caption="Solo asignaciones publicables" />
+            <MetricCard label="Respuestas publicables" value={data.scores.responseCount} caption="En el filtro seleccionado" />
+            <MetricCard label="Docentes destacados" value={data.teachers.filter((teacher) => teacher.category === 'Excelente').length} caption="Categoría Excelente" />
+          </div>
+          <div className="hr-category-grid" aria-label="Docentes por categoría">{categories.map((item) => <div className={'hr-category hr-category-' + item.tone} key={item.label}>
+            <span className="hr-category-dot" aria-hidden="true" /><div><strong>{data.teachers.filter((teacher) => teacher.category === item.label).length}</strong><span>{item.label} · {item.range}</span></div>
+          </div>)}</div>
+        </section>
+        {data.teachers.length === 0 && <EmptyState title="Resultados insuficientes" message="No hay docentes con asignaciones que alcancen cinco evaluaciones completas en este filtro." />}
+        <DataTable title="Ranking e indicadores docentes" columns={columns} rows={teachers} getRowKey={(teacher) => teacher.id} emptyMessage="No hay docentes de esta categoría para los filtros seleccionados." minWidth={940} />
+        <p className="hr-disclaimer"><Info size={18} aria-hidden="true" /> Estas categorías son indicadores definidos por el proyecto, derivados del promedio en escala 0–10. No representan decisiones laborales automáticas.</p>
+      </>}
     </div>
   </InstitutionalLayout>
 }

@@ -34,10 +34,10 @@ export default function App() {
       <Route path="/teacher/results/:id" element={<TeacherResultPage />} />
       <Route path="/teacher/history" element={<TeacherHistoryPage />} />
     </Route>
-    <Route element={<RequireRole allowed={['coordinator', 'admin']} />}>
+    <Route element={<RequireRole allowed={['coordinator']} />}>
       <Route path="/coordinator" element={<CoordinatorDashboardPage />} />
     </Route>
-    <Route element={<RequireRole allowed={['hr', 'admin']} />}>
+    <Route element={<RequireRole allowed={['hr']} />}>
       <Route path="/hr" element={<HrDashboardPage />} />
     </Route>
     <Route element={<RequireRole allowed={['admin']} />}>
