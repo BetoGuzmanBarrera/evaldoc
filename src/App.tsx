@@ -2,6 +2,9 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { LandingPage } from './pages/public/LandingPage'
 import { LoginPage } from './pages/public/LoginPage'
 import { RegisterPage } from './pages/public/RegisterPage'
+import { ForgotPasswordPage } from './pages/public/ForgotPasswordPage'
+import { ResetPasswordPage } from './pages/public/ResetPasswordPage'
+import { EmailConfirmationPage } from './pages/public/EmailConfirmationPage'
 import { PendingPage } from './pages/public/PendingPage'
 import { StudentDashboardPage } from './pages/student/StudentDashboardPage'
 import { EvaluationsPage } from './pages/student/EvaluationsPage'
@@ -22,6 +25,9 @@ export default function App() {
     <Route path="/" element={<LandingPage />} />
     <Route path="/login" element={<LoginPage />} />
     <Route path="/register" element={<RegisterPage />} />
+    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+    <Route path="/reset-password" element={<ResetPasswordPage />} />
+    <Route path="/email-confirmation" element={<EmailConfirmationPage />} />
     <Route path="/pending" element={<PendingPage />} />
     <Route element={<RequireRole allowed={['student']} />}>
       <Route path="/student" element={<StudentDashboardPage />} />

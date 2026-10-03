@@ -1,17 +1,21 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { homeForIdentity } from '../../auth/types'
 import { authMessage } from '../../auth/messages'
 import { Brand } from '../../components/ui/Brand'
+import { PasswordField } from '../../components/ui/PasswordField'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { session, profile, roles, loading, error: identityError, signOut } = useAuth()
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [password, setPassword] = useState('')
+  const resetComplete = (location.state as { passwordReset?: boolean } | null)?.passwordReset === true
 
   useEffect(() => {
     if (session && !loading && profile && roles.length > 0) {
@@ -23,13 +27,13 @@ export function LoginPage() {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
     const email = String(form.get('email') ?? '').trim()
-    const password = String(form.get('password') ?? '')
     setError('')
     setMessage('')
     setSubmitting(true)
     try {
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
       if (signInError) setError(authMessage(signInError, 'login'))
+      else setPassword('')
     } catch {
       setError('No pudimos conectar con el servicio. Inténtalo de nuevo.')
     } finally {
@@ -45,14 +49,14 @@ export function LoginPage() {
       <p className="auth-subtitle">Accede con tus credenciales institucionales</p>
       <form onSubmit={(event) => void onSubmit(event)}>
         <label className="field"><span>Correo institucional</span><input type="email" name="email" autoComplete="username" placeholder="alberto@institucion.edu.mx" required /></label>
-        <label className="field"><span>Contraseña</span><input type="password" name="password" autoComplete="current-password" placeholder="••••••••" required /></label>
-        <div className="login-options"><span className="check-label">La sesión se mantiene en este dispositivo</span><button className="text-button" type="button" onClick={() => setMessage('La recuperación de contraseña estará disponible en una próxima versión.')}>¿Olvidaste tu contraseña?</button></div>
+        <PasswordField label="Contraseña" name="password" value={password} onChange={setPassword} autoComplete="current-password" placeholder="••••••••" />
+        <div className="login-options"><span className="check-label">La sesión se mantiene en este dispositivo</span><Link className="text-button" to="/forgot-password">¿Olvidaste tu contraseña?</Link></div>
         {(error || identityError) && <p className="form-error" role="alert">{error || identityError}</p>}
         {identityError && <button className="text-button" type="button" onClick={async () => {
           try { await signOut(); setError('') }
           catch { setError('No se pudo cerrar la sesión. Inténtalo de nuevo.') }
         }}>Cerrar sesión y reintentar</button>}
-        {message && <p className="form-note" role="status">{message}</p>}
+        {(message || resetComplete) && <p className="form-note" role="status">{message || 'Contraseña actualizada. Ya puedes iniciar sesión.'}</p>}
         <button className="button button-primary auth-submit" type="submit" disabled={submitting || loading}>{submitting ? 'Iniciando sesión…' : 'Iniciar sesión'}</button>
       </form>
       <div className="auth-separator"><span>o</span></div>
