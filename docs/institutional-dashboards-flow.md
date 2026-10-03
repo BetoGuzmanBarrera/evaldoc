@@ -20,7 +20,7 @@ RRHH clasifica a partir del promedio ponderado **redondeado a un decimal**: 9.0�
 
 ## Límites y verificación
 
-Los filtros de participación muestran conteos de obligaciones incluso en grupos pequeños, pero nunca calificaciones bajo el umbral. Como en el Bloque 8, consultas repetidas de agregados vivos pueden permitir diferencias temporales al llegar respuestas nuevas; una futura publicación por cohortes cerradas o instantáneas congeladas reforzaría el anonimato. Los perfiles administrativos se limitan a 100 resultados por búsqueda. No se implementan altas, cambios de rol, PDF, talleres/laboratorios ni notificaciones.
+Los filtros de participación muestran conteos de obligaciones incluso en grupos pequeños, pero nunca calificaciones bajo el umbral. Como en el Bloque 8, consultas repetidas de agregados vivos pueden permitir diferencias temporales al llegar respuestas nuevas; una futura publicación por cohortes cerradas o instantáneas congeladas reforzaría el anonimato. Los perfiles administrativos se limitan a 100 resultados por búsqueda. PDF y el modelo de talleres/laboratorios se incorporaron en bloques posteriores; no existe CRUD UI de talleres, altas de usuarios, cambios de rol ni notificaciones.
 
 `supabase/tests/institutional_real_dashboards.sql` usa dos instituciones y roles ficticios dentro de `BEGIN … ROLLBACK`. Prueba filtros, obligaciones esperadas, completadas y pendientes, cuatro categorías, ranking publicable, cuentas sin acceso y ausencia de identidad estudiantil en las respuestas agregadas. Tras `supabase db reset --local` se vuelven a ejecutar las suites de los Bloques 6, 7 y 8.
 

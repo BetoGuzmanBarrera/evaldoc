@@ -1,5 +1,7 @@
 # Esquema de base de datos de EvalDoc
 
+**Estado final Bloque 14:** las ocho migraciones producen 18 tablas públicas y 17 políticas, todas las tablas con RLS. Las dos tablas añadidas son `facilities` y `program_facilities`; véanse [DER](database-er-diagram.md), [modelo físico](database-physical-model.md) y [diccionario](data-dictionary.md). Los recuentos de 16 tablas en las secciones históricas describen el estado anterior a esta ampliación.
+
 Las primeras cuatro migraciones de `supabase/migrations` construyen 16 tablas públicas: `institutions`, `campuses`, `profiles`, `roles`, `user_roles`, `academic_periods`, `programs`, `subjects`, `groups`, `teaching_assignments`, `student_enrollments`, `survey_templates`, `survey_questions`, `evaluation_windows`, `evaluations` y `evaluation_answers`. La quinta añade agregados docentes y la sexta agregados institucionales, sin tablas nuevas. `supabase db reset --local` aplica las migraciones en orden y después `supabase/seed.sql`. El seed contiene siete instituciones, cinco roles y una plantilla global versionada; no crea usuarios, contraseñas ni datos académicos ficticios permanentes.
 
 ## Relaciones y periodos
@@ -20,7 +22,7 @@ La obligación de la rúbrica `(alumno, docente, materia, ciclo)` se representa 
 
 ## Privacidad y permisos
 
-RLS permanece activa en las 16 tablas. Las migraciones de alumno, docente e institucional no agregan políticas ni permisos directos sobre `evaluations` o `evaluation_answers`. Docentes, coordinación, RRHH y administración no pueden consultar respuestas individuales ni la identidad del evaluador. Las funciones `SECURITY DEFINER` pertenecen a `postgres`, usan `search_path = ''` y objetos calificados; `EXECUTE` se revoca de `PUBLIC` y `anon`. Los wrappers de alumno y docente son `SECURITY INVOKER`; las RPC institucionales verifican el rol y la institución dentro de la función elevada. Las funciones trigger no son ejecutables por clientes. Los promedios se publican únicamente cuando una asignación reúne cinco evaluaciones completas; véanse `docs/teacher-results-flow.md` y `docs/institutional-dashboards-flow.md`.
+RLS permanece activa en las 18 tablas finales. Las migraciones de alumno, docente e institucional no agregan políticas ni permisos directos sobre `evaluations` o `evaluation_answers`. Docentes, coordinación, RRHH y administración no pueden consultar respuestas individuales ni la identidad del evaluador. Las funciones `SECURITY DEFINER` pertenecen a `postgres`, usan `search_path = ''` y objetos calificados; `EXECUTE` se revoca de `PUBLIC` y `anon`. Los wrappers de alumno y docente son `SECURITY INVOKER`; las RPC institucionales verifican el rol y la institución dentro de la función elevada. Las funciones trigger no son ejecutables por clientes. Los promedios se publican únicamente cuando una asignación reúne cinco evaluaciones completas; véanse `docs/teacher-results-flow.md` y `docs/institutional-dashboards-flow.md`.
 
 ## Reproducción
 

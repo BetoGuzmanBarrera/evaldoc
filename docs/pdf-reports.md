@@ -18,7 +18,7 @@ El informe docente detallado pertenece al propio docente. No se añadió una RPC
 
 ## Privacidad y seguridad
 
-Las RPC existentes verifican `auth.uid()`, perfil activo, rol de base de datos e institución. Un alumno, una cuenta pendiente o un docente ajeno no puede obtener los datos mediante el RPC aunque invoque la descarga manualmente desde la consola. Las 16 tablas mantienen RLS; no se usan claves privilegiadas, acceso directo a respuestas ni bypass. El PDF se compone solo de columnas agregadas previamente publicables. El modelo no admite `student_id`, nombres/correos estudiantiles, respuestas ni identificadores de evaluación. No se exportan tablas de usuarios de Administración.
+Las RPC existentes verifican `auth.uid()`, perfil activo, rol de base de datos e institución. Un alumno, una cuenta pendiente o un docente ajeno no puede obtener los datos mediante el RPC aunque invoque la descarga manualmente desde la consola. Las 18 tablas finales mantienen RLS; no se usan claves privilegiadas, acceso directo a respuestas ni bypass. El PDF se compone solo de columnas agregadas previamente publicables. El modelo no admite `student_id`, nombres/correos estudiantiles, respuestas ni identificadores de evaluación. No se exportan tablas de usuarios de Administración.
 
 El umbral permanece en **cinco evaluaciones completas de 15 reactivos por asignación**. Por debajo, el promedio, favorable y reactivos son protegidos. Si hay varias versiones de plantilla, no se mezcla el desglose. El histórico y los promedios institucionales se construyen con agregados publicables. Los conteos de participación siguen visibles conforme a las RPC previas. El informe de RRHH describe categorías del proyecto, sin automatizar decisiones laborales.
 
@@ -30,4 +30,4 @@ En la compilación de referencia anterior, el JS inicial era **576.21 kB (162.24
 
 `npm run test:pdf` verifica estructura, filtros, umbral, privacidad del modelo, histórico, empates, nombre de archivo, MIME y paginación. Las cinco suites SQL de los Bloques 6–10 prueban las reglas de autorización de los RPC reutilizados (242 casos). La revisión visual se realiza con PDFs ficticios temporales y Poppler; se eliminan los archivos de prueba al terminar. No se introduce información mock en la descarga de producción.
 
-Límites: la generación sucede en el navegador y puede consumir memoria para informes muy extensos. El aviso previo sobre inferencias por diferencias temporales entre agregados se mantiene; instantáneas de cohortes cerradas serán una mejora futura. Se aplaza Excel al siguiente bloque.
+Límites: la generación sucede en el navegador y puede consumir memoria para informes muy extensos. El aviso previo sobre inferencias por diferencias temporales entre agregados se mantiene; instantáneas de cohortes cerradas serán una mejora futura. No se incluye Excel en el alcance final.

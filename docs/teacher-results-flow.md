@@ -1,6 +1,6 @@
 # Resultados reales del docente (Bloque 8)
 
-Las páginas `/teacher`, `/teacher/results/:id` y `/teacher/history` consumen exclusivamente las RPC agregadas de la quinta migración. El navegador nunca descarga `evaluations`, `evaluation_answers`, `student_enrollments`, `student_id`, nombres ni identificadores de estudiantes. Tampoco calcula promedios a partir de respuestas individuales. Las páginas de coordinación, RRHH y administración siguen separadas y con datos mock.
+Las páginas `/teacher`, `/teacher/results/:id` y `/teacher/history` consumen exclusivamente las RPC agregadas de la quinta migración. El navegador nunca descarga `evaluations`, `evaluation_answers`, `student_enrollments`, `student_id`, nombres ni identificadores de estudiantes. Tampoco calcula promedios a partir de respuestas individuales. Las páginas de coordinación, RRHH y administración usan sus propias RPC institucionales.
 
 ## Autorización y publicación
 
