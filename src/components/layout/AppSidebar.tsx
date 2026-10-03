@@ -17,8 +17,8 @@ export function AppSidebar({ open, onClose, role, active }: { open: boolean; onC
   const institutionalItems: InstitutionalNavItem[] = role === 'admin' ? [
     { label: 'Inicio', icon: House, to: '/admin', active: 'home' },
     { label: 'Instituciones', icon: Building2, to: '/institutions', active: 'institutions' },
-    { label: 'Coordinación', icon: BarChart3, to: '/coordinator' },
-    { label: 'Recursos Humanos', icon: UsersRound, to: '/hr' },
+    { label: 'Coordinación', icon: BarChart3 },
+    { label: 'Recursos Humanos', icon: UsersRound },
     { label: 'Perfil', icon: UserRound },
   ] : [
     { label: 'Inicio', icon: House, to: role === 'hr' ? '/hr' : '/coordinator', active: 'home' },
