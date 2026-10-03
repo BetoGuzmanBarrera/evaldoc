@@ -25,3 +25,7 @@ RLS permanece activa en las 16 tablas. Las migraciones de alumno, docente e inst
 ## Reproducción
 
 `supabase/tests/multiinstitution_rls.sql` cubre la autorización previa (66 comprobaciones). `supabase/tests/student_real_evaluations.sql` usa fixtures ficticios dentro de una transacción con `ROLLBACK`; cubre elegibilidad, manipulación de UUID, aislamiento A/B, plantilla/ventana, escala, atomicidad, duplicados y privacidad. `supabase/tests/teacher_real_results.sql` verifica agregación, umbral y aislamiento docente. `supabase/tests/institutional_real_dashboards.sql` verifica participación, ranking, categorías, filtros y aislamiento institucional. Ninguna suite deja fixtures. Los dashboards de alumno, docente, coordinación, RRHH y administración usan RPC reales.
+
+## Ampliación del Bloque 10
+
+La séptima migración, `20261003050927_institutional_analytics.sql`, añade seis RPC de analítica sin crear tablas, políticas o índices. Reutiliza las relaciones y periodos anteriores; ninguna migración previa se edita. `supabase/tests/institutional_analytics.sql` verifica fórmulas, tres periodos, los 15 reactivos, el umbral y el aislamiento, y termina en `ROLLBACK`. Véase `docs/institutional-analytics.md`.

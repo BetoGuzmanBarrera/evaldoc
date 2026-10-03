@@ -87,7 +87,7 @@ export interface AdminUserRow {
 
 export class InstitutionalAccessError extends Error {}
 
-function assertRows(data: unknown, error: { code?: string } | null): Record<string, unknown>[] {
+export function assertRows(data: unknown, error: { code?: string } | null): Record<string, unknown>[] {
   if (error?.code === 'P0001' || error?.code === '42501') throw new InstitutionalAccessError('access_denied')
   if (error || !Array.isArray(data)) throw new Error('institutional_load_failed')
   return data as Record<string, unknown>[]
