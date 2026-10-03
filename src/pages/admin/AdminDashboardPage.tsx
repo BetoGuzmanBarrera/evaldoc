@@ -5,6 +5,7 @@ import { InstitutionalLayout } from '../../components/layout/InstitutionalLayout
 import { DataTable, type DataColumn } from '../../components/ui/DataTable'
 import { InstitutionalFeedback } from '../../components/ui/InstitutionalFeedback'
 import { MetricCard } from '../../components/ui/MetricCard'
+import { PdfDownloadButton } from '../../components/ui/PdfDownloadButton'
 import { useInstitutionalData } from '../../hooks/useInstitutionalData'
 import { loadAnalyticsOverview, loadAnalyticsTrend } from '../../lib/institutionalAnalytics'
 import { loadAdminSummary, loadAdminUsers, type AdminUserRow } from '../../lib/institutionalDashboards'
@@ -37,7 +38,8 @@ export function AdminDashboardPage() {
   const analytics = summary.data?.analytics
   const trend = summary.data?.trend
 
-  return <InstitutionalLayout role="admin" title="Administración" subtitle="Estructura y usuarios de tu institución" period="Todos los periodos">
+  return <InstitutionalLayout role="admin" title="Administración" subtitle="Estructura y usuarios de tu institución" period="Todos los periodos"
+    actions={<div className="institutional-action-buttons"><PdfDownloadButton request={{ kind: 'progress', role: 'admin', filters: {} }} label="Avance PDF" /><PdfDownloadButton request={{ kind: 'participation', role: 'admin', filters: {} }} label="Participación PDF" /><PdfDownloadButton request={{ kind: 'history', role: 'admin', filters: {} }} label="Histórico PDF" /><PdfDownloadButton request={{ kind: 'executive', role: 'admin', filters: {} }} label="Informe PDF" className="button button-primary" /></div>}>
     <div className="institutional-content">
       <InstitutionalFeedback loading={summary.loading} error={summary.error} onRetry={summary.reload} />
       {counts && analytics && trend && <>

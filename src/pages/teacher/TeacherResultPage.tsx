@@ -1,23 +1,24 @@
-import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { DimensionBars } from '../../components/charts/DimensionBars'
 import { TeacherLayout } from '../../components/layout/TeacherLayout'
 import { TeacherPrivacyNotice } from '../../components/teacher/TeacherPrivacyNotice'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { LoadingSkeleton } from '../../components/ui/LoadingSkeleton'
+import { PdfDownloadButton } from '../../components/ui/PdfDownloadButton'
+import { useAuth } from '../../hooks/useAuth'
 import { useTeacherAssignment } from '../../hooks/useTeacherResults'
 import { isUuid } from '../../lib/teacherResults'
 
 export function TeacherResultPage() {
   const { id } = useParams<{ id: string }>()
-  const [demoMessage, setDemoMessage] = useState('')
+  const { profile } = useAuth()
   const { result, loading, error, reload } = useTeacherAssignment(isUuid(id) ? id : null)
 
   if (loading) return <TeacherLayout active="results" title="Detalle de resultados" subtitle="Cargando asignación"><div className="teacher-content"><LoadingSkeleton /><TeacherPrivacyNotice /></div></TeacherLayout>
   if (error) return <TeacherLayout active="results" title="Detalle de resultados" subtitle="Resultados no disponibles"><div className="teacher-content"><div className="surface teacher-load-error" role="alert"><p>No pudimos cargar los resultados.</p><button className="button button-outline" type="button" onClick={reload}>Reintentar</button></div><TeacherPrivacyNotice /></div></TeacherLayout>
   if (!result) return <TeacherLayout active="results" title="Detalle de resultados" subtitle="Materia no encontrada"><div className="teacher-content"><div className="surface teacher-missing"><h2>No encontramos resultados para esta asignación.</h2><Link className="button button-primary" to="/teacher#assignments">Volver a mis asignaciones</Link></div><TeacherPrivacyNotice /></div></TeacherLayout>
 
-  const actions = <><button className="button button-outline" type="button" onClick={() => setDemoMessage('La exportación estará disponible en una próxima versión.')}>Exportar</button><button className="button button-primary" type="button" onClick={() => setDemoMessage('La generación de reportes estará disponible en una próxima versión.')}>Generar reporte</button></>
+  const actions = <PdfDownloadButton request={{ kind: 'teacher', assignmentId: result.id, teacherName: profile?.full_name ?? 'Docente', institution: profile?.institution_short_name ?? 'Institución' }} className="button button-primary" />
   const ordered = [...result.questions].sort((a, b) => a.score - b.score)
   const lowest = ordered[0]
   const highest = ordered[ordered.length - 1]
@@ -30,7 +31,6 @@ export function TeacherResultPage() {
     subtitle={result.subjectName + ' · Grupo ' + result.groupCode}
     period={result.periodName} actions={actions}>
     <div className="teacher-content teacher-result-content">
-      {demoMessage && <p className="form-note" role="status">{demoMessage}</p>}
       <div className="surface teacher-filters" aria-label="Contexto de resultados">
         <div className="teacher-filter-value">Periodo: {result.periodName}</div>
         <div className="teacher-filter-value">Grupo: {result.groupCode}</div>
