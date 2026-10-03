@@ -7,6 +7,7 @@ import { TeacherPrivacyNotice } from '../../components/teacher/TeacherPrivacyNot
 import { EmptyState } from '../../components/ui/EmptyState'
 import { LoadingSkeleton } from '../../components/ui/LoadingSkeleton'
 import { MetricCard } from '../../components/ui/MetricCard'
+import { PdfDownloadButton } from '../../components/ui/PdfDownloadButton'
 import { useAuth } from '../../hooks/useAuth'
 import { useTeacherOverview } from '../../hooks/useTeacherResults'
 
@@ -67,7 +68,7 @@ export function TeacherDashboardPage() {
               <div className="teacher-assignment-list">{assignments.map((item) => <article key={item.id} className="teacher-assignment-item">
                 <div><strong>{item.subjectName}</strong><p>Grupo {item.groupCode} · {item.periodName}</p></div>
                 <span>{item.responseCount} {item.responseCount === 1 ? 'respuesta' : 'respuestas'}</span>
-                <Link className="button button-outline button-small" to={'/teacher/results/' + item.id}>Ver resultados</Link>
+                <div className="teacher-assignment-actions"><Link className="button button-outline button-small" to={'/teacher/results/' + item.id}>Ver resultados</Link><PdfDownloadButton request={{ kind: 'teacher', assignmentId: item.id, teacherName: profile?.full_name ?? 'Docente', institution: profile?.institution_short_name ?? 'Institución' }} className="button button-outline button-small" /></div>
               </article>)}</div>
             </section>
           </>}

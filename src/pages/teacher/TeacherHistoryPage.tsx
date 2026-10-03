@@ -4,9 +4,12 @@ import { TeacherPrivacyNotice } from '../../components/teacher/TeacherPrivacyNot
 import { EmptyState } from '../../components/ui/EmptyState'
 import { LoadingSkeleton } from '../../components/ui/LoadingSkeleton'
 import { MetricCard } from '../../components/ui/MetricCard'
+import { PdfDownloadButton } from '../../components/ui/PdfDownloadButton'
+import { useAuth } from '../../hooks/useAuth'
 import { useTeacherOverview } from '../../hooks/useTeacherResults'
 
 export function TeacherHistoryPage() {
+  const { profile } = useAuth()
   const { history, breakdown, loading, error, reload } = useTeacherOverview()
   const current = history[0]
   const previous = history.slice(1).find((period) => period.averageScore !== null)
@@ -21,7 +24,8 @@ export function TeacherHistoryPage() {
     .map((period) => ({ period: period.name, score: period.averageScore ?? 0 }))
 
   return <TeacherLayout active="history" title="Histórico de resultados"
-    subtitle="Comparativo por periodo académico" period={current?.name}>
+    subtitle="Comparativo por periodo académico" period={current?.name}
+    actions={<PdfDownloadButton request={{ kind: 'teacherHistory', institution: profile?.institution_short_name ?? 'Institución' }} />}>
     <div className="teacher-content teacher-history">
       {loading ? <LoadingSkeleton /> : error
         ? <div className="surface teacher-load-error" role="alert"><p>No pudimos cargar el histórico.</p><button className="button button-outline" type="button" onClick={reload}>Reintentar</button></div>

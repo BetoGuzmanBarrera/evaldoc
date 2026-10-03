@@ -8,6 +8,7 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { FilterBar } from '../../components/ui/FilterBar'
 import { InstitutionalFeedback } from '../../components/ui/InstitutionalFeedback'
 import { MetricCard } from '../../components/ui/MetricCard'
+import { PdfDownloadButton } from '../../components/ui/PdfDownloadButton'
 import { AnalyticsExtremes, PeriodComparisonCard } from '../../components/ui/AnalyticsInsights'
 import { useInstitutionalData } from '../../hooks/useInstitutionalData'
 import {
@@ -56,7 +57,6 @@ const scopes: { id: ParticipationScope; label: string }[] = [
 export function CoordinatorDashboardPage() {
   const [filters, setFilters] = useState<InstitutionalFilters>({})
   const [scope, setScope] = useState<ParticipationScope>('campus')
-  const [demoMessage, setDemoMessage] = useState('')
   const loader = useCallback(async () => {
     const [options, participation, ranking, overview, trend, comparison, breakdown, questions] = await Promise.all([
       loadInstitutionalOptions(), loadParticipation(filters), loadRanking(filters),
@@ -77,13 +77,14 @@ export function CoordinatorDashboardPage() {
   ]
   const periodName = options.find((item) => item.id === filters.period)?.label ?? 'Todos los periodos'
   const actions = <div className="institutional-action-buttons">
-    <button className="button button-outline" type="button" onClick={() => setDemoMessage('La exportación estará disponible en una próxima versión.')}>Exportar</button>
-    <button className="button button-primary" type="button" onClick={() => setDemoMessage('La generación de reportes estará disponible en una próxima versión.')}>Generar reporte</button>
+    <PdfDownloadButton request={{ kind: 'progress', role: 'coordinator', filters }} label="Avance PDF" />
+    <PdfDownloadButton request={{ kind: 'participation', role: 'coordinator', filters }} label="Participación PDF" />
+    <PdfDownloadButton request={{ kind: 'history', role: 'coordinator', filters }} label="Histórico PDF" />
+    <PdfDownloadButton request={{ kind: 'executive', role: 'coordinator', filters }} label="Informe PDF" className="button button-primary" />
   </div>
 
   return <InstitutionalLayout role="coordinator" title="Panel de Coordinación" subtitle="Monitoreo de participación y desempeño institucional" period={periodName} actions={actions}>
     <div className="institutional-content">
-      {demoMessage && <p className="form-note" role="status">{demoMessage}</p>}
       <InstitutionalFeedback loading={loading} error={error} onRetry={reload} />
       {data && <>
         <FilterBar filters={dashboardFilters} values={{ campus: filters.campus ?? '', program: filters.program ?? '', group: filters.group ?? '', period: filters.period ?? '' }} onChange={(id, value) => setFilters((current) => ({ ...current, [id]: value || undefined, ...(id === 'campus' ? { program: undefined, group: undefined } : id === 'program' || id === 'period' ? { group: undefined } : {}) }))} />

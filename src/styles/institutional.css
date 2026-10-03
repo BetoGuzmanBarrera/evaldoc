@@ -2,7 +2,7 @@
 .institutional-shell .sidebar-link:not(.active):not(.sidebar-placeholder):hover{background:#2B4F7A;color:white}
 .institutional-shell .period-chip{display:none}
 .institutional-content{display:flex;flex-direction:column;gap:20px;min-width:0}
-.institutional-action-buttons{display:flex;align-items:center;gap:9px}
+.institutional-action-buttons{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .institutional-action-buttons .button{padding:0 13px}
 .institutional-filters{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;padding:12px;min-width:0}
 .institutional-filters label{min-width:0}

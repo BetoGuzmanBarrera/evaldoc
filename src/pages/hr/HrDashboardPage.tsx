@@ -7,6 +7,7 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { FilterBar } from '../../components/ui/FilterBar'
 import { InstitutionalFeedback } from '../../components/ui/InstitutionalFeedback'
 import { MetricCard } from '../../components/ui/MetricCard'
+import { PdfDownloadButton } from '../../components/ui/PdfDownloadButton'
 import { PeriodComparisonCard } from '../../components/ui/AnalyticsInsights'
 import { useInstitutionalData } from '../../hooks/useInstitutionalData'
 import {
@@ -58,7 +59,8 @@ export function HrDashboardPage() {
   ]
   const periodName = data?.options.find((item) => item.id === period)?.label ?? 'Todos los periodos'
 
-  return <InstitutionalLayout role="hr" title="Recursos Humanos" subtitle="Indicadores consolidados para acompañamiento docente" period={periodName}>
+  return <InstitutionalLayout role="hr" title="Recursos Humanos" subtitle="Indicadores consolidados para acompañamiento docente" period={periodName}
+    actions={<div className="institutional-action-buttons"><PdfDownloadButton request={{ kind: 'progress', role: 'hr', filters: { period, campus } }} label="Avance PDF" /><PdfDownloadButton request={{ kind: 'participation', role: 'hr', filters: { period, campus } }} label="Participación PDF" /><PdfDownloadButton request={{ kind: 'history', role: 'hr', filters: { period, campus } }} label="Histórico PDF" /><PdfDownloadButton request={{ kind: 'executive', role: 'hr', filters: { period, campus } }} label="Informe PDF" className="button button-primary" /></div>}>
     <div className="institutional-content">
       <InstitutionalFeedback loading={loading} error={error} onRetry={reload} />
       {data && <>

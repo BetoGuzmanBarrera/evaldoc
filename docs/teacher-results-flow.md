@@ -18,6 +18,6 @@ El histórico pondera los promedios de **asignaciones publicables** por su núme
 
 ## Límites y pruebas
 
-El umbral evita divulgar resultados de grupos de menos de cinco, pero los agregados se actualizan durante una ventana abierta. Consultas repetidas antes y después de una respuesta nueva podrían permitir diferencias temporales; una futura versión debería publicar cohortes cerradas o instantáneas congeladas si se exige resistencia formal a ese ataque. Los conteos visibles también revelan participación agregada. No se implementan exportación PDF, generación de reportes ni resultados institucionales en este bloque.
+El umbral evita divulgar resultados de grupos de menos de cinco, pero los agregados se actualizan durante una ventana abierta. Consultas repetidas antes y después de una respuesta nueva podrían permitir diferencias temporales; una futura versión debería publicar cohortes cerradas o instantáneas congeladas si se exige resistencia formal a ese ataque. Los conteos visibles también revelan participación agregada. El Bloque 11 añade descarga de PDF del propio docente con estas RPC; véase [pdf-reports.md](pdf-reports.md).
 
 `supabase/tests/teacher_real_results.sql` crea dos instituciones, varios docentes y estudiantes ficticios en una transacción con `ROLLBACK`. Verifica umbral, 15 preguntas, promedios, histórico, UUID ajeno, acceso por rol y ausencia de identidad en las RPC. Las suites previas de RLS y evaluación real se vuelven a ejecutar tras `supabase db reset --local`.
