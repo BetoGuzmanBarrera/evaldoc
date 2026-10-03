@@ -1,10 +1,12 @@
 import { useCallback, useDeferredValue, useState } from 'react'
 import { Search } from 'lucide-react'
+import { AnalyticsTrendChart } from '../../components/charts/AnalyticsTrendChart'
 import { InstitutionalLayout } from '../../components/layout/InstitutionalLayout'
 import { DataTable, type DataColumn } from '../../components/ui/DataTable'
 import { InstitutionalFeedback } from '../../components/ui/InstitutionalFeedback'
 import { MetricCard } from '../../components/ui/MetricCard'
 import { useInstitutionalData } from '../../hooks/useInstitutionalData'
+import { loadAnalyticsOverview, loadAnalyticsTrend } from '../../lib/institutionalAnalytics'
 import { loadAdminSummary, loadAdminUsers, type AdminUserRow } from '../../lib/institutionalDashboards'
 
 const roleNames: Record<string, string> = {
@@ -22,22 +24,34 @@ const columns: DataColumn<AdminUserRow>[] = [
 export function AdminDashboardPage() {
   const [query, setQuery] = useState('')
   const deferredQuery = useDeferredValue(query.trim())
-  const summaryLoader = useCallback(() => loadAdminSummary(), [])
+  const summaryLoader = useCallback(async () => {
+    const [counts, analytics, trend] = await Promise.all([
+      loadAdminSummary(), loadAnalyticsOverview(), loadAnalyticsTrend(),
+    ])
+    return { counts, analytics, trend }
+  }, [])
   const usersLoader = useCallback(() => loadAdminUsers(deferredQuery || null), [deferredQuery])
   const summary = useInstitutionalData('admin-summary', summaryLoader)
   const users = useInstitutionalData('admin-users:' + deferredQuery, usersLoader)
-  const counts = summary.data
+  const counts = summary.data?.counts
+  const analytics = summary.data?.analytics
+  const trend = summary.data?.trend
 
   return <InstitutionalLayout role="admin" title="Administración" subtitle="Estructura y usuarios de tu institución" period="Todos los periodos">
     <div className="institutional-content">
       <InstitutionalFeedback loading={summary.loading} error={summary.error} onRetry={summary.reload} />
-      {counts && <>
+      {counts && analytics && trend && <>
         <div className="metric-grid institutional-metrics" aria-label="Resumen de administración">
           <MetricCard label="Usuarios" value={counts.userCount} caption="Perfiles de esta institución" />
           <MetricCard label="Docentes" value={counts.teacherCount} caption="Roles asignados" />
           <MetricCard label="Alumnos" value={counts.studentCount} caption="Roles asignados" />
           <MetricCard label="Campus" value={counts.campusCount} caption={counts.programCount + (counts.programCount === 1 ? ' programa' : ' programas')} />
+          <MetricCard label="Evaluaciones esperadas" value={analytics.expected} caption="Todos los periodos" />
+          <MetricCard label="Evaluaciones realizadas" value={analytics.completed} caption="Completadas" />
+          <MetricCard label="Evaluaciones pendientes" value={analytics.pending} caption="Por realizar" />
+          <MetricCard label="Participación general" value={analytics.participation.toFixed(1) + '%'} caption="Institución propia" />
         </div>
+        <AnalyticsTrendChart title="Promedio institucional por periodo" points={trend.map((row) => ({ id: row.periodId, label: row.periodName, score: row.averageScore, responseCount: row.responseCount }))} />
         <div className="institutional-admin-details">
           <section className="surface institutional-count-panel"><h2>Estados de perfiles</h2><dl>
             <div><dt>Pendientes</dt><dd>{counts.pendingCount}</dd></div>

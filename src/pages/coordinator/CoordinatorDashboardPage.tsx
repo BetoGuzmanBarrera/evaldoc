@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { ParticipationChart } from '../../components/charts/ParticipationChart'
+import { AnalyticsTrendChart } from '../../components/charts/AnalyticsTrendChart'
 import { ScoreRing } from '../../components/charts/ScoreRing'
 import { InstitutionalLayout } from '../../components/layout/InstitutionalLayout'
 import { DataTable, type DataColumn } from '../../components/ui/DataTable'
@@ -7,9 +8,15 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { FilterBar } from '../../components/ui/FilterBar'
 import { InstitutionalFeedback } from '../../components/ui/InstitutionalFeedback'
 import { MetricCard } from '../../components/ui/MetricCard'
+import { AnalyticsExtremes, PeriodComparisonCard } from '../../components/ui/AnalyticsInsights'
 import { useInstitutionalData } from '../../hooks/useInstitutionalData'
 import {
-  loadInstitutionalOptions, loadParticipation, loadRanking, loadScoreSummary,
+  loadAnalyticsBreakdown, loadAnalyticsOverview, loadAnalyticsTrend,
+  loadPeriodComparison, loadQuestionAnalytics,
+  type AnalyticsBreakdownRow, type QuestionAnalyticsRow,
+} from '../../lib/institutionalAnalytics'
+import {
+  loadInstitutionalOptions, loadParticipation, loadRanking,
   type InstitutionalFilters, type ParticipationRow, type ParticipationScope,
   type TeacherRankingRow,
 } from '../../lib/institutionalDashboards'
@@ -29,6 +36,18 @@ const participationColumns: DataColumn<ParticipationRow>[] = [
   { label: 'Pendientes', render: (row) => row.pending },
   { label: 'Avance', render: (row) => row.participation.toFixed(1) + '%' },
 ]
+const breakdownColumns: DataColumn<AnalyticsBreakdownRow>[] = [
+  { label: 'Ámbito', render: (row) => ({ campus: 'Campus', program: 'Programa', group: 'Grupo' })[row.scope] },
+  { label: 'Nombre', render: (row) => row.label },
+  { label: 'Promedio / 10', render: (row) => row.averageScore.toFixed(1) },
+  { label: 'Respuestas publicables', render: (row) => row.responseCount },
+  { label: 'Docentes', render: (row) => row.teacherCount },
+]
+const questionColumns: DataColumn<QuestionAnalyticsRow>[] = [
+  { label: 'Reactivo oficial', render: (row) => `${row.order}. ${row.text}` },
+  { label: 'Promedio / 10', render: (row) => row.averageScore.toFixed(1) },
+  { label: 'Evaluaciones consideradas', render: (row) => row.responseCount },
+]
 const scopes: { id: ParticipationScope; label: string }[] = [
   { id: 'campus', label: 'Campus' }, { id: 'program', label: 'Programa' },
   { id: 'group', label: 'Grupo' }, { id: 'period', label: 'Periodo' },
@@ -39,10 +58,12 @@ export function CoordinatorDashboardPage() {
   const [scope, setScope] = useState<ParticipationScope>('campus')
   const [demoMessage, setDemoMessage] = useState('')
   const loader = useCallback(async () => {
-    const [options, participation, ranking, scores] = await Promise.all([
-      loadInstitutionalOptions(), loadParticipation(filters), loadRanking(filters), loadScoreSummary(filters),
+    const [options, participation, ranking, overview, trend, comparison, breakdown, questions] = await Promise.all([
+      loadInstitutionalOptions(), loadParticipation(filters), loadRanking(filters),
+      loadAnalyticsOverview(filters), loadAnalyticsTrend(filters),
+      loadPeriodComparison(filters), loadAnalyticsBreakdown(filters), loadQuestionAnalytics(filters),
     ])
-    return { options, participation, ranking, scores }
+    return { options, participation, ranking, overview, trend, comparison, breakdown, questions }
   }, [filters])
   const { data, loading, error, reload } = useInstitutionalData(JSON.stringify(filters), loader)
   const total = data?.participation.find((row) => row.scope === 'total')
@@ -70,7 +91,7 @@ export function CoordinatorDashboardPage() {
           <MetricCard label="Participación general" value={(total?.participation ?? 0).toFixed(1) + '%'} caption={(total?.expected ?? 0) + (total?.expected === 1 ? ' evaluación esperada' : ' evaluaciones esperadas')} />
           <MetricCard label="Evaluaciones realizadas" value={total?.completed ?? 0} caption={(total?.pending ?? 0) + ' pendientes'} />
           <MetricCard label="Estudiantes esperados" value={total?.students ?? 0} caption="Con obligaciones en el filtro" />
-          <MetricCard label="Docentes con resultados" value={data.scores.teacherCount} caption="Asignaciones publicables" />
+          <MetricCard label="Docentes con resultados" value={data.overview.teacherCount} caption="Asignaciones publicables" />
         </div>
         {total?.expected === 0 && <EmptyState title="Periodo sin evaluaciones" message="No hay obligaciones registradas para los filtros seleccionados." />}
         <div className="institutional-chart-grid">
@@ -78,11 +99,19 @@ export function CoordinatorDashboardPage() {
             {chartRows.length ? <ParticipationChart title={'Participación por ' + (scopes.find((item) => item.id === scope)?.label.toLowerCase() ?? scope)} points={chartRows.map((row) => ({ id: row.id ?? row.label, label: row.label, participation: row.participation }))} />
               : <EmptyState title="Sin desglose" message="No hay registros en esta categoría para los filtros seleccionados." />}
           </div>
-          <ScoreRing score={data.scores.averageScore} />
+          <ScoreRing score={data.overview.averageScore} />
         </div>
-        {data.scores.averageScore === null && total && total.completed > 0 && <p className="institutional-privacy-note">Resultados insuficientes: los promedios requieren cinco evaluaciones completas por asignación.</p>}
+        {data.overview.averageScore === null && total && total.completed > 0 && <p className="institutional-privacy-note">Resultados insuficientes para proteger el anonimato: los promedios requieren cinco evaluaciones completas por asignación.</p>}
+        <div className="analytics-panels">
+          <AnalyticsTrendChart title="Tendencia institucional por periodo" points={data.trend.map((row) => ({ id: row.periodId, label: row.periodName, score: row.averageScore, responseCount: row.responseCount }))} />
+          <PeriodComparisonCard comparison={data.comparison} />
+        </div>
+        <DataTable title="Promedio por campus, programa y grupo" columns={breakdownColumns} rows={data.breakdown} getRowKey={(row) => row.scope + ':' + row.id} emptyMessage="Resultados insuficientes para proteger el anonimato en este filtro." minWidth={720} />
+        <AnalyticsExtremes title="Docentes con promedios extremos" items={data.ranking.map((teacher) => ({ label: teacher.name, score: teacher.averageScore }))} />
         <DataTable title="Participación por campus, programa, grupo y periodo" columns={participationColumns} rows={data.participation.filter((row) => row.scope !== 'total')} getRowKey={(row) => row.scope + ':' + row.id} minWidth={680} />
         <DataTable title="Ranking docente institucional" columns={rankingColumns} rows={data.ranking} getRowKey={(teacher) => teacher.id} emptyMessage="No hay docentes con resultados publicables para estos filtros." minWidth={660} />
+        <AnalyticsExtremes title="Reactivos con mayor y menor promedio" items={data.questions.map((question) => ({ label: question.text, score: question.averageScore }))} />
+        <DataTable title="Promedio por reactivo oficial" columns={questionColumns} rows={data.questions} getRowKey={(row) => String(row.order) + ':' + row.text} emptyMessage="Resultados insuficientes para proteger el anonimato en este filtro." minWidth={760} />
       </>}
     </div>
   </InstitutionalLayout>
