@@ -1,0 +1,21 @@
+# Seguridad de cuenta — Bloque 12
+
+## Política y flujo
+
+Registro y reset exigen 8 o más caracteres, una letra mayúscula, una minúscula, un dígito y un símbolo admitido por Supabase Auth. La UI muestra un checklist en vivo con icono, texto y estado accesible. La confirmación debe coincidir. `supabase/config.toml` configura `minimum_password_length = 8` y `password_requirements = "lower_upper_letters_digits_symbols"`; el backend también rechaza contraseñas débiles. El control mostrar/ocultar tiene nombre accesible en registro, login y reset.
+
+Con `enable_confirmations = true`, el registro envía un correo local a Mailpit y no concede sesión antes de confirmarlo. La confirmación solo verifica el email de Auth; no activa el perfil académico. El trigger de alta deja `profiles.status = pending` y asigna únicamente `student`. RLS y las RPC impiden que `pending` obtenga datos académicos. El login dirige esa cuenta a `/pending`; una cuenta activa sigue las rutas de sus roles.
+
+El formulario `/forgot-password` llama `resetPasswordForEmail()` y siempre presenta «Si existe una cuenta asociada a ese correo, recibirás instrucciones.» ante respuestas sin fallo de servicio, para no distinguir públicamente si el correo existe. Un fallo de red o del servicio muestra un mensaje genérico. El enlace de recuperación lleva a `/reset-password`; el formulario solo aparece con el evento `PASSWORD_RECOVERY` o con una coincidencia exacta entre el token del enlace inicial y la sesión restaurada, más `getUser()` válido. La evidencia inicial del fragmento se conserva solo en memoria hasta esa comparación, para cubrir el caso en que Auth procesa el enlace antes de montar React. `updateUser()` cambia la contraseña; luego se ejecuta `signOut()` y se vuelve a `/login`. La contraseña anterior deja de servir. Un enlace inválido/expirado o una sesión normal no abre el formulario.
+
+Los mensajes de Auth se traducen a texto controlado. No se escriben contraseñas ni tokens en logs, archivos versionados o parámetros de URL propios. Los enlaces generados por Supabase Auth contienen el token de un solo uso necesario para su verificación; el navegador recibe la sesión en el fragmento que procesa `supabase-js`. No se agrega `service_role` al frontend.
+
+## Configuración local y producción futura
+
+Los redirects exactos permitidos son `/login`, `/email-confirmation` y `/reset-password` en `http://localhost:5173` y `http://127.0.0.1:5173`. El `site_url` local es `http://localhost:5173`. No hay rutas de otro proyecto. Si Vite cambia de puerto, hay que ajustar la allowlist local antes de probar correo.
+
+En producción, configurar el dominio HTTPS propio como `site_url`, autorizar únicamente los paths de confirmación y recuperación de ese dominio, y probar las plantillas de correo y caducidad de enlaces. Esa configuración no se despliega desde este bloque. No se conectó Supabase remoto.
+
+Mailpit local: `http://127.0.0.1:55424`. La prueba `npm run test:auth:local` opera solo si `.env.local` apunta al Auth de EvalDoc en puerto 55421. Crea correos ficticios `example.test`, verifica los enlaces en Mailpit, el estado `pending`, el aislamiento académico, el reset y el login posterior. Ejecutar `npx.cmd supabase db reset --local` al terminar elimina los usuarios de prueba y reproduce migraciones y seed. Al cambiar `supabase/config.toml` mientras los contenedores ya corren, `db reset` por sí solo no reinicia Auth: detener **solo** el proyecto `evaldoc` con `npx.cmd supabase stop --project-id evaldoc` y luego `npx.cmd supabase start` aplica los cambios de Auth. Verificar que el contenedor tenga autoconfirmación desactivada y requisitos de caracteres antes de probar.
+
+Supabase Auth conserva sus límites locales de frecuencia. No se añadió una defensa temporal de cliente. Login, registro y recuperación deberán incorporar CAPTCHA/Cloudflare Turnstile en el PR #13, junto con la configuración de Auth correspondiente. También quedan para despliegue las URLs de producción, SMTP de producción y pruebas operativas de entrega de correo.

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import { supabase } from '../lib/supabase'
+import { consumeRecoveryRedirect, supabase } from '../lib/supabase'
 import { AuthContext } from './AuthContext'
 import { isRoleCode, type AuthProfile, type AuthState, type RoleCode } from './types'
 
@@ -45,6 +45,8 @@ async function fetchIdentity(userId: string): Promise<{ profile: AuthProfile; ro
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>(initialState)
+  const [recoveryUserId, setRecoveryUserId] = useState<string | null>(null)
+  const recoveryAccessToken = useRef<string | null>(null)
   const requestVersion = useRef(0)
   const loadedUserId = useRef<string | null>(null)
 
@@ -93,6 +95,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const timers = new Set<ReturnType<typeof setTimeout>>()
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === 'PASSWORD_RECOVERY' && nextSession) {
+        recoveryAccessToken.current = nextSession.access_token
+        setRecoveryUserId(nextSession.user.id)
+      } else if (event === 'INITIAL_SESSION' && nextSession && consumeRecoveryRedirect(nextSession)) {
+        recoveryAccessToken.current = nextSession.access_token
+        setRecoveryUserId(nextSession.user.id)
+      } else if (event === 'SIGNED_OUT' || (event === 'SIGNED_IN' && recoveryAccessToken.current !== nextSession?.access_token)) {
+        recoveryAccessToken.current = null
+        setRecoveryUserId(null)
+      } else if (event === 'TOKEN_REFRESHED' && recoveryAccessToken.current && nextSession) {
+        recoveryAccessToken.current = nextSession.access_token
+      }
       if (event === 'TOKEN_REFRESHED' && nextSession?.user.id === loadedUserId.current) {
         setState((current) => ({ ...current, user: nextSession.user, session: nextSession }))
         return
@@ -125,7 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw new Error('No se pudo cerrar la sesión.')
   }, [])
 
-  return <AuthContext.Provider value={{ ...state, signOut, refreshIdentity }}>
+  return <AuthContext.Provider value={{ ...state, recoveryUserId, signOut, refreshIdentity }}>
     {children}
   </AuthContext.Provider>
 }

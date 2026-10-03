@@ -82,3 +82,17 @@ html:has(.landing){scrollbar-width:none}
 .pending-card .form-error{color:#B91C1C}
 .pending-card .button{margin-top:8px}
 @media(max-width:600px){.pending-card{padding:28px 24px}}
+
+.account-page{min-height:100vh;background:var(--bg);display:grid;place-items:center;padding:24px}
+.account-card{width:min(100%,480px);padding:36px;display:flex;flex-direction:column;gap:16px}
+.account-card h1{color:var(--navy);font-size:27px;line-height:1.2;letter-spacing:-.5px}
+.account-card>p:not(.auth-subtitle){font-size:14px;line-height:1.6;color:var(--muted)}
+.account-card form{display:flex;flex-direction:column;gap:16px}
+.account-card .auth-subtitle{margin:0}
+.account-back-link{color:var(--primary);font-size:13px;font-weight:600;align-self:flex-start}
+.password-requirements{list-style:none;margin:2px 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px}
+.password-requirements li{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;line-height:1.3}
+.password-requirements li>span:first-child{width:17px;flex:none;font-size:15px;text-align:center}
+.password-requirements li.met{color:#166534;font-weight:600}
+.password-field .form-error{margin-top:2px}
+@media(max-width:600px){.account-page{padding:16px;place-items:start center}.account-card{padding:26px 22px;margin-top:32px}.password-requirements{grid-template-columns:1fr}.login-options{align-items:flex-start;flex-wrap:wrap}}

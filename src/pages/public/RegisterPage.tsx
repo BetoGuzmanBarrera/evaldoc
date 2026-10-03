@@ -2,8 +2,10 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Info } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { authMessage } from '../../auth/messages'
+import { meetsPasswordPolicy, passwordsMatch } from '../../auth/passwordPolicy'
 import { homeForIdentity } from '../../auth/types'
 import { Brand } from '../../components/ui/Brand'
+import { PasswordField } from '../../components/ui/PasswordField'
 import { useAuth } from '../../hooks/useAuth'
 import { getRegistrationInstitutions, type RegistrationInstitution } from '../../lib/registrationInstitutions'
 import { supabase } from '../../lib/supabase'
@@ -17,6 +19,10 @@ export function RegisterPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [password, setPassword] = useState('')
+  const [confirmation, setConfirmation] = useState('')
+  const mismatch = confirmation.length > 0 && !passwordsMatch(password, confirmation)
+  const passwordReady = meetsPasswordPolicy(password) && passwordsMatch(password, confirmation)
 
   useEffect(() => {
     let active = true
@@ -47,16 +53,14 @@ export function RegisterPage() {
     const fullName = String(form.get('fullName') ?? '').trim()
     const email = String(form.get('email') ?? '').trim()
     const identifier = String(form.get('accountNumber') ?? '').trim()
-    const password = String(form.get('password') ?? '')
-    const confirmation = String(form.get('confirmPassword') ?? '')
     setError('')
     setSuccess('')
     if (!institutions.some((item) => item.id === institutionId)) {
       setError('Selecciona una institución válida.')
       return
     }
-    if (password !== confirmation) {
-      setError('Las contraseñas no coinciden.')
+    if (!passwordReady) {
+      setError('Revisa los requisitos y confirma la contraseña.')
       return
     }
     setSubmitting(true)
@@ -65,7 +69,7 @@ export function RegisterPage() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/login`,
+          emailRedirectTo: `${window.location.origin}/email-confirmation`,
           data: {
             institution_id: institutionId,
             full_name: fullName,
@@ -76,8 +80,12 @@ export function RegisterPage() {
       if (signUpError) {
         setError(authMessage(signUpError, 'register'))
       } else if (!data.session) {
-        setSuccess('Cuenta creada. Revisa tu correo para confirmarla antes de iniciar sesión.')
+        setPassword('')
+        setConfirmation('')
+        navigate('/email-confirmation', { replace: true, state: { awaitingEmail: true } })
       } else {
+        setPassword('')
+        setConfirmation('')
         setSuccess('Cuenta creada. Preparando tu sesión…')
       }
     } catch {
@@ -101,14 +109,14 @@ export function RegisterPage() {
           <label className="field"><span>Nombre completo</span><input name="fullName" autoComplete="name" placeholder="Alberto Guzman" maxLength={120} required /></label>
           <label className="field"><span>Correo institucional</span><input name="email" type="email" autoComplete="email" placeholder="nombre@institucion.edu.mx" required /></label>
           <label className="field"><span>Número de cuenta / empleado</span><input name="accountNumber" placeholder="20245678" maxLength={64} required /></label>
-          <label className="field"><span>Contraseña</span><input name="password" type="password" autoComplete="new-password" placeholder="Mínimo 8 caracteres" minLength={8} required /></label>
+          <PasswordField label="Contraseña" name="password" value={password} onChange={setPassword} autoComplete="new-password" placeholder="Crea una contraseña segura" showRequirements />
         </div>
-        <label className="field"><span>Confirmar contraseña</span><input name="confirmPassword" type="password" autoComplete="new-password" placeholder="Repite tu contraseña" minLength={8} required /></label>
+        <PasswordField label="Confirmar contraseña" name="confirmPassword" value={confirmation} onChange={setConfirmation} autoComplete="new-password" placeholder="Repite tu contraseña" error={mismatch ? 'Las contraseñas no coinciden.' : undefined} />
         <label className="check-label terms-check"><input type="checkbox" required /> Acepto términos y política de privacidad</label>
         <div className="role-note"><Info size={18} aria-hidden="true" /><span>Los roles administrativos, docentes y de coordinación deben ser validados por la institución.</span></div>
         {error && <p className="form-error" role="alert">{error}</p>}
         {success && <p className="form-note" role="status">{success}</p>}
-        <button className="button button-primary auth-submit" type="submit" disabled={submitting || institutionsLoading || institutions.length === 0}>{submitting ? 'Creando cuenta…' : 'Registrarse'}</button>
+        <button className="button button-primary auth-submit" type="submit" disabled={submitting || institutionsLoading || institutions.length === 0 || !passwordReady}>{submitting ? 'Creando cuenta…' : 'Registrarse'}</button>
       </form>
     </section></main>
   </div>
