@@ -1,5 +1,7 @@
 # Autorización RLS multiinstitución
 
+**Estado final Bloque 14:** RLS activa en 18 tablas públicas y 17 políticas SELECT. La octava migración añade `facilities` y `program_facilities`, consultables solo por `coordinator` y `admin` activos de la institución propia. Revoca escrituras cliente y ejecución directa de sus funciones trigger. No cambia el acceso a evaluaciones ni respuestas. Las referencias a 16 tablas y 15 políticas abajo corresponden al esquema previo de los Bloques 6–13.
+
 La migración `20261002215313_multiinstitution_rls.sql` establece mínimo privilegio sobre las 16 tablas públicas. La migración `20261002223647_student_real_evaluations.sql` añade dos RPC y triggers de integridad. La quinta migración, `20261002233352_teacher_aggregated_results.sql`, añade tres RPC docentes de resultados agregados. La sexta, `20261003035132_institutional_aggregated_dashboards.sql`, añade RPC institucionales de lectura. Ninguna añade políticas RLS. La autorización se resuelve desde `auth.uid()`, `profiles`, `user_roles`, `roles` y relaciones académicas reales; ni metadata ni el estado del frontend conceden acceso. Cada administrador opera dentro de su institución.
 
 ## Lectura directa por rol
@@ -45,7 +47,7 @@ La sexta migración no concede lectura directa a `evaluations`, `evaluation_answ
 
 ## Políticas y límites
 
-Siguen existiendo las 15 políticas SELECT del Bloque 6, sin `USING (true)` general ni políticas de escritura cliente. Las funciones existentes `app_private.current_institution_id()`, `app_private.has_active_role(text)` y `app_private.my_evaluation_teachers()` preservan lectura restringida; el wrapper público de nombres docentes solo proyecta los asignados al alumno. `evaluations.student_id` sirve internamente para elegibilidad y RF03, pero ni la tabla ni respuestas individuales se exponen a docentes, coordinación, RRHH o administración.
+Siguen existiendo las 15 políticas SELECT del Bloque 6, más dos políticas SELECT nuevas para instalaciones, sin `USING (true)` general ni políticas de escritura cliente. Las funciones existentes `app_private.current_institution_id()`, `app_private.has_active_role(text)` y `app_private.my_evaluation_teachers()` preservan lectura restringida; el wrapper público de nombres docentes solo proyecta los asignados al alumno. `evaluations.student_id` sirve internamente para elegibilidad y RF03, pero ni la tabla ni respuestas individuales se exponen a docentes, coordinación, RRHH o administración.
 
 `supabase/tests/multiinstitution_rls.sql` cubre 66 casos de autorización del Bloque 6. `supabase/tests/student_real_evaluations.sql` añade los casos de escritura real y privacidad. `supabase/tests/teacher_real_results.sql` añade aislamiento y umbral de resultados docentes. `supabase/tests/institutional_real_dashboards.sql` añade autorización institucional y cálculos. Las tres suites nuevas cierran con `ROLLBACK`; el seed no contiene usuarios ficticios.
 
