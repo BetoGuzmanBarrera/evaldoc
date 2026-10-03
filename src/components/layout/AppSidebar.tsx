@@ -35,7 +35,7 @@ export function AppSidebar({ open, onClose, role, active }: { open: boolean; onC
       <p className="sidebar-caption">PORTAL INSTITUCIONAL</p>
       {role === 'teacher' ? <nav className="sidebar-nav" aria-label="Secciones del docente">
         <Link to="/teacher" onClick={onClose} className={'sidebar-link ' + (active === 'home' ? 'active' : '')} aria-current={active === 'home' ? 'page' : undefined}><House size={18} aria-hidden="true" /> Inicio</Link>
-        <Link to="/teacher/results/1" onClick={onClose} className={'sidebar-link ' + (active === 'results' ? 'active' : '')} aria-current={active === 'results' ? 'page' : undefined}><BarChart3 size={18} aria-hidden="true" /> Mis resultados</Link>
+        <Link to="/teacher#assignments" onClick={onClose} className={'sidebar-link ' + (active === 'results' ? 'active' : '')} aria-current={active === 'results' ? 'page' : undefined}><BarChart3 size={18} aria-hidden="true" /> Mis resultados</Link>
         <Link to="/teacher/history" onClick={onClose} className={'sidebar-link ' + (active === 'history' ? 'active' : '')} aria-current={active === 'history' ? 'page' : undefined}><History size={18} aria-hidden="true" /> Histórico</Link>
         <span className="sidebar-link sidebar-placeholder" aria-disabled="true"><BookOpen size={18} aria-hidden="true" /> Materias</span>
         <span className="sidebar-link sidebar-placeholder" aria-disabled="true"><UserRound size={18} aria-hidden="true" /> Perfil</span>
