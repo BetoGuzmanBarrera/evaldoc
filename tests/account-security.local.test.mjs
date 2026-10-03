@@ -19,6 +19,8 @@ const email = `qa.account.${randomUUID()}@example.test`
 const identifier = `QA-${randomUUID()}`
 const password = `Qa1!${randomBytes(12).toString('hex')}`
 const nextPassword = `Qb2@${randomBytes(12).toString('hex')}`
+// Official Cloudflare dummy token; accepted only with the ignored local dummy secret.
+const captchaToken = 'XXXX.DUMMY.TOKEN.XXXX'
 
 async function mailForUser(previousIds = new Set()) {
   for (let attempt = 0; attempt < 30; attempt++) {
@@ -63,18 +65,18 @@ test('Auth local y Mailpit: confirmación, pending y recuperación real', async 
   assert.equal(institutions.error, null)
   const institutionId = institutions.data.id
   await t.test('backend rechaza contraseña débil', async () => {
-    const result = await anonymous.auth.signUp({ email: `weak.${email}`, password: 'weakpassword', options: { data: { institution_id: institutionId, full_name: 'QA Weak', institutional_identifier: 'QA-WEAK' } } })
+    const result = await anonymous.auth.signUp({ email: `weak.${email}`, password: 'weakpassword', options: { captchaToken, data: { institution_id: institutionId, full_name: 'QA Weak', institutional_identifier: 'QA-WEAK' } } })
     assert.ok(result.error)
     assert.equal(result.error.code, 'weak_password')
   })
   await t.test('registro válido exige confirmación y envía correo local', async () => {
-    const result = await anonymous.auth.signUp({ email, password, options: { emailRedirectTo: 'http://localhost:5173/email-confirmation', data: { institution_id: institutionId, full_name: 'QA Cuenta', institutional_identifier: identifier, role: 'admin' } } })
+    const result = await anonymous.auth.signUp({ email, password, options: { captchaToken, emailRedirectTo: 'http://localhost:5173/email-confirmation', data: { institution_id: institutionId, full_name: 'QA Cuenta', institutional_identifier: identifier, role: 'admin' } } })
     assert.equal(result.error, null)
     assert.ok(!result.data.session, 'signup must not establish a session before email confirmation')
     assert.ok(result.data.user?.id)
   })
   await t.test('login antes de confirmar es bloqueado', async () => {
-    const result = await anonymous.auth.signInWithPassword({ email, password })
+    const result = await anonymous.auth.signInWithPassword({ email, password, options: { captchaToken } })
     assert.equal(result.error?.code, 'email_not_confirmed')
   })
   const confirmation = await mailForUser()
@@ -105,11 +107,11 @@ test('Auth local y Mailpit: confirmación, pending y recuperación real', async 
   })
   const before = new Set((await (await fetch(`${mailpit}/api/v1/messages`)).json()).messages.map((item) => item.ID))
   await t.test('correo inexistente obtiene respuesta neutral de Auth', async () => {
-    const result = await anonymous.auth.resetPasswordForEmail(`unknown.${email}`, { redirectTo: 'http://localhost:5173/reset-password' })
+    const result = await anonymous.auth.resetPasswordForEmail(`unknown.${email}`, { redirectTo: 'http://localhost:5173/reset-password', captchaToken })
     assert.equal(result.error, null)
   })
   await t.test('recuperación real solicita un email y enlace local', async () => {
-    const result = await anonymous.auth.resetPasswordForEmail(email, { redirectTo: 'http://localhost:5173/reset-password' })
+    const result = await anonymous.auth.resetPasswordForEmail(email, { redirectTo: 'http://localhost:5173/reset-password', captchaToken })
     assert.equal(result.error, null)
   })
   const recoveryMessage = await mailForUser(before)
@@ -128,11 +130,11 @@ test('Auth local y Mailpit: confirmación, pending y recuperación real', async 
     assert.ok(!(await recoveryClient.auth.getSession()).data.session, 'signOut must clear the session')
   })
   await t.test('contraseña anterior deja de funcionar', async () => {
-    const result = await anonymous.auth.signInWithPassword({ email, password })
+    const result = await anonymous.auth.signInWithPassword({ email, password, options: { captchaToken } })
     assert.ok(result.error)
   })
   await t.test('contraseña nueva permite login y perfil sigue pending', async () => {
-    const result = await anonymous.auth.signInWithPassword({ email, password: nextPassword })
+    const result = await anonymous.auth.signInWithPassword({ email, password: nextPassword, options: { captchaToken } })
     assert.equal(result.error, null)
     const profile = await anonymous.from('profiles').select('status').eq('id', result.data.user.id).single()
     assert.equal(profile.data?.status, 'pending')

@@ -1,0 +1,21 @@
+# Turnstile y protección antiabuso — Bloque 13
+
+EvalDoc usa Cloudflare Turnstile en `/register`, `/login` y `/forgot-password`. El componente carga el script oficial al montar uno de esos formularios; no se monta en `/reset-password` ni en rutas académicas. El botón de envío requiere un token en memoria. Supabase Auth valida ese token **en el servidor** mediante su integración nativa con Turnstile, de modo que ocultar el widget en el navegador no evita la comprobación. `supabase-js` envía `captchaToken` en `signUp`, `signInWithPassword` y `resetPasswordForEmail`.
+
+El token se descarta al expirar, fallar o terminar una solicitud; el widget se reinicia para obtener otro. El componente muestra estados de carga, listo, completado, expirado y error, con texto accesible y un botón para reintentar. El adaptador desmonta el widget al abandonar el formulario y reutiliza el script oficial en vez de duplicarlo. El token no se guarda en `localStorage`, URL ni archivos.
+
+## Configuración local
+
+Solo la **site key pública** va al cliente: `VITE_TURNSTILE_SITE_KEY` en `.env.local`, documentada sin valor en `.env.example`. Para el proyecto local EvalDoc, usar la site key oficial de prueba que siempre pasa `1x00000000000000000000AA`. La clave de prueba correspondiente del servidor, `1x0000000000000000000000000000000AA`, vive únicamente en el `.env` ignorado por Git como `EVALDOC_TURNSTILE_SECRET`; `supabase/config.toml` la lee mediante `env(EVALDOC_TURNSTILE_SECRET)`. Son claves públicas de **prueba**, incapaces de proteger producción. No colocar ninguna secret en una variable `VITE_`.
+
+Tras cambiar la configuración Auth, ejecutar desde este workspace `npx.cmd supabase stop --project-id evaldoc` y `npx.cmd supabase start`; un `db reset` por sí solo no reinicia GoTrue. La URL local esperada de Auth es `http://127.0.0.1:55421`. Verificar que `GOTRUE_SECURITY_CAPTCHA_ENABLED=true` y el provider sea `turnstile` sin imprimir el valor de la secret. `npm run test:turnstile:local` prueba rechazo de solicitudes sin token y aceptación del token de prueba en los tres flujos. `npm run test:auth:local` sigue probando confirmación de correo, perfil `pending`, recuperación y cambio de contraseña. Ambas pruebas crean cuentas ficticias locales; ejecutar `npx.cmd supabase db reset --local` al terminar para dejar cero usuarios QA.
+
+Para probar el rechazo por un challenge inválido, cambiar **temporalmente** la secret del `.env` ignorado a la clave oficial *always-fail* `2x0000000000000000000000000000000AA`, reiniciar solo el Supabase local de EvalDoc y ejecutar `EVALDOC_EXPECT_CAPTCHA_REJECTION=1 npm run test:turnstile:local` (en PowerShell, asignar la variable de sesión antes del comando). La site key de fallo correspondiente es `2x00000000000000000000AB`; para la prueba de servidor basta enviar el token ficticio. Restaurar después la secret *always-pass*, reiniciar Auth y comprobar el flujo válido. No usar estas claves en producción.
+
+La clave de prueba *always-pass* no permite demostrar expiración, uso único ni rechazo de un token arbitrario: Cloudflare responde favorablemente a los tokens enviados a esa clave de prueba. Esos casos requieren otra clave de prueba oficial, un entorno de pruebas separado o pruebas con claves reales fuera de este PR. En producción los tokens duran cinco minutos y son de un solo uso; la validación debe permanecer activa en Auth.
+
+## Producción (pendiente, sin despliegue)
+
+Crear un widget Turnstile en Cloudflare con los dominios HTTPS exactos de EvalDoc. Configurar su site key en la compilación del frontend y su secret **solo** en la configuración segura de Supabase Auth del proyecto correcto. Habilitar Turnstile en Auth, comprobar los tres endpoints y los dominios permitidos antes de publicar. Mantener la secret fuera de Git, del bundle y del navegador; rotarla si se expone. Verificar límites de frecuencia de Auth, accesibilidad, caducidad y fallos de Cloudflare con claves reales en un entorno de staging. No se ha cambiado ningún proyecto remoto.
+
+Fuentes: [Supabase Auth CAPTCHA](https://supabase.com/docs/guides/auth/auth-captcha), [claves de prueba oficiales](https://developers.cloudflare.com/turnstile/troubleshooting/testing/), [renderizado explícito y ciclo de vida del widget](https://developers.cloudflare.com/turnstile/get-started/client-side-rendering/).

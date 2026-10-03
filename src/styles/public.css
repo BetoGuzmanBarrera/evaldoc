@@ -53,6 +53,10 @@ html:has(.landing){scrollbar-width:none}
 .login-options{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .text-button{color:var(--primary);font-size:13px;font-weight:600;border:0;background:none;padding:4px}
 .auth-submit{width:100%;margin-top:2px}
+.turnstile-field{display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-width:0;max-width:100%}
+.turnstile-label{font-size:13px;font-weight:600;color:var(--navy)}
+.turnstile-status{font-size:12px;line-height:1.4;color:var(--muted)}
+.turnstile-retry{padding-left:0}
 .auth-separator{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;margin:16px 0}
 .auth-separator:before,.auth-separator:after{content:"";height:1px;background:var(--border);flex:1}
 .google-button{width:100%}
@@ -96,3 +100,4 @@ html:has(.landing){scrollbar-width:none}
 .password-requirements li.met{color:#166534;font-weight:600}
 .password-field .form-error{margin-top:2px}
 @media(max-width:600px){.account-page{padding:16px;place-items:start center}.account-card{padding:26px 22px;margin-top:32px}.password-requirements{grid-template-columns:1fr}.login-options{align-items:flex-start;flex-wrap:wrap}}
+@media(max-width:600px){.login-card{padding-left:16px;padding-right:16px}.account-card{padding-left:20px;padding-right:20px}}
