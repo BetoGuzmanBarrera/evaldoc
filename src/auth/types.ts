@@ -6,6 +6,7 @@ export interface AuthProfile {
   id: string
   institution_id: string
   institution_short_name: string
+  institution_name: string
   full_name: string
   institutional_email: string
   institutional_identifier: string | null
@@ -41,5 +42,5 @@ export function homeForRoles(roles: RoleCode[]): string {
 }
 
 export function homeForIdentity(profile: AuthProfile, roles: RoleCode[]): string {
-  return profile.status === 'pending' ? '/pending' : homeForRoles(roles)
+  return profile.status !== 'active' ? '/pending' : homeForRoles(roles)
 }

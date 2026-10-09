@@ -26,21 +26,20 @@ async function fetchIdentity(userId: string): Promise<{ profile: AuthProfile; ro
     { data: institution, error: institutionError },
   ] = await Promise.all([
     supabase.from('user_roles').select('role_id').eq('profile_id', userId),
-    supabase.from('institutions').select('short_name').eq('id', profile.institution_id).single(),
+    supabase.from('institutions').select('name,short_name').eq('id', profile.institution_id).single(),
   ])
-  if (membershipError || !memberships?.length) throw new Error('No se pudieron cargar los roles.')
+  if (membershipError || !memberships) throw new Error('No se pudieron cargar los roles.')
   if (institutionError || !institution) throw new Error('No se pudo cargar la institución.')
 
   const roleIds = [...new Set(memberships.map((membership) => membership.role_id))]
-  const { data: roleRows, error: rolesError } = await supabase
-    .from('roles')
-    .select('id,code')
-    .in('id', roleIds)
+  const { data: roleRows, error: rolesError } = roleIds.length
+    ? await supabase.from('roles').select('id,code').in('id', roleIds)
+    : { data: [], error: null }
   if (rolesError || !roleRows) throw new Error('No se pudieron cargar los roles.')
 
   const roles = roleRows.map((role) => role.code).filter(isRoleCode)
-  if (roles.length === 0) throw new Error('La cuenta no tiene un rol disponible.')
-  return { profile: { ...profile, institution_short_name: institution.short_name } as AuthProfile, roles }
+  if (roles.length === 0 && profile.status === 'active') throw new Error('La cuenta no tiene un rol disponible.')
+  return { profile: { ...profile, institution_short_name: institution.short_name, institution_name: institution.name } as AuthProfile, roles }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
