@@ -21,7 +21,7 @@ export function LoginPage() {
   const resetComplete = (location.state as { passwordReset?: boolean } | null)?.passwordReset === true
 
   useEffect(() => {
-    if (session && !loading && profile && roles.length > 0) {
+    if (session && !loading && profile && (profile.status !== 'active' || roles.length > 0)) {
       navigate(homeForIdentity(profile, roles), { replace: true })
     }
   }, [session, profile, roles, loading, navigate])

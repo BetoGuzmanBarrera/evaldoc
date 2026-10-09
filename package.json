@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test:role-aware": "node --experimental-strip-types --test tests/role-aware-registration.test.mjs",
+    "test:role-aware:local": "node --test tests/role-aware-registration.local.test.mjs",
     "test:final-qa": "node --experimental-strip-types --test tests/email-confirmation.test.mjs tests/survey-review.test.mjs",
     "test:pdf": "node --experimental-strip-types --test tests/pdf-reports.test.mjs",
     "test:auth": "node --experimental-strip-types --test tests/account-security.test.mjs",

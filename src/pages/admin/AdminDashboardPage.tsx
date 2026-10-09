@@ -1,6 +1,7 @@
 import { useCallback, useDeferredValue, useState } from 'react'
 import { Search } from 'lucide-react'
 import { AnalyticsTrendChart } from '../../components/charts/AnalyticsTrendChart'
+import { PendingRequestsPanel } from '../../components/admin/PendingRequestsPanel'
 import { InstitutionalLayout } from '../../components/layout/InstitutionalLayout'
 import { DataTable, type DataColumn } from '../../components/ui/DataTable'
 import { InstitutionalFeedback } from '../../components/ui/InstitutionalFeedback'
@@ -83,6 +84,7 @@ export function AdminDashboardPage() {
         {users.data && <><DataTable title="Usuarios de tu institución" columns={columns} rows={users.data} getRowKey={(user) => user.id} emptyMessage="No hay usuarios que coincidan con la búsqueda." minWidth={800} />
           <p className="institutional-readonly-note">Se muestran hasta 100 perfiles por búsqueda. Las altas y los cambios de rol requieren un flujo administrativo seguro.</p></>}
       </>}
+      <PendingRequestsPanel onChanged={() => { summary.reload(); users.reload() }} />
     </div>
   </InstitutionalLayout>
 }
