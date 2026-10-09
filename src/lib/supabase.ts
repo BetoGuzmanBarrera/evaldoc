@@ -1,4 +1,5 @@
 import { createClient, type Session } from '@supabase/supabase-js'
+import { parseEmailConfirmationRedirect, resolveEmailConfirmationRedirect, type EmailConfirmationRedirect } from '../auth/emailConfirmationRedirect'
 import { isRecoveryRedirectSession } from '../auth/recoveryRedirect'
 
 const url = import.meta.env.VITE_SUPABASE_URL
@@ -16,6 +17,17 @@ let recoveryRedirectHash = (() => {
   return new URLSearchParams(hash.replace(/^#/, '')).get('type') === 'recovery' ? hash : ''
 })()
 
+// Auth may remove the signup fragment before React renders. Keep only the
+// classification and token needed to bind it to the resulting session.
+const initialEmailConfirmationRedirect = typeof window !== 'undefined' && window.location.pathname === '/email-confirmation'
+  ? parseEmailConfirmationRedirect(window.location.search, window.location.hash)
+  : { kind: 'invalid' } as EmailConfirmationRedirect
+
+const initialEmailConfirmationLocationKey = typeof window !== 'undefined' ? window.history.state?.key ?? 'default' : 'default'
+
+export function emailConfirmationRedirect(search: string, hash: string, locationKey: string): EmailConfirmationRedirect {
+  return resolveEmailConfirmationRedirect(search, hash, locationKey, initialEmailConfirmationLocationKey, initialEmailConfirmationRedirect)
+}
 export function consumeRecoveryRedirect(session: Session): boolean {
   const matched = isRecoveryRedirectSession(recoveryRedirectHash, session.access_token)
   recoveryRedirectHash = ''

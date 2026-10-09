@@ -1,5 +1,6 @@
 import type { Rating, SurveyQuestionData } from '../types'
 import { supabase } from './supabase'
+import { officialRatings } from './surveyFlow'
 
 interface EvaluationRow {
   assignment_id: string
@@ -61,8 +62,6 @@ export class StudentEvaluationError extends Error {
     this.kind = kind
   }
 }
-
-const allowedRatings: readonly number[] = [0, 2.5, 5, 7.5, 10]
 
 export function evaluationRouteId(assignmentId: string, windowId: string): string {
   return assignmentId + '.' + windowId
@@ -138,7 +137,7 @@ export async function submitStudentEvaluation(
   answers: Record<string, Rating>,
 ): Promise<string> {
   if (questions.length !== 15 || questions.some((question) =>
-    answers[question.id] === undefined || !allowedRatings.includes(answers[question.id])
+    answers[question.id] === undefined || !officialRatings.includes(answers[question.id])
   )) {
     throw new StudentEvaluationError('invalid_answers')
   }

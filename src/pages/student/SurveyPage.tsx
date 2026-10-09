@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Brand } from '../../components/ui/Brand'
 import { ConfirmationModal } from '../../components/evaluation/ConfirmationModal'
 import { SurveyQuestion } from '../../components/evaluation/SurveyQuestion'
+import { SurveyReview } from '../../components/evaluation/SurveyReview'
 import { useStudentEvaluations } from '../../hooks/useStudentEvaluations'
 import {
   loadSurveyQuestions,
@@ -11,6 +12,7 @@ import {
   submissionMessage,
   submitStudentEvaluation,
 } from '../../lib/studentEvaluations'
+import { createSubmissionGuard, isReviewComplete, nextSurveyStep, type SurveyStep } from '../../lib/surveyFlow'
 import type { Rating, SurveyQuestionData } from '../../types'
 
 interface QuestionState {
@@ -34,12 +36,12 @@ export function SurveyPage() {
   const templateId = evaluation?.templateId
   const [questionState, setQuestionState] = useState<QuestionState>({ templateId: '', questions: [], error: false })
   const [questionRevision, setQuestionRevision] = useState(0)
-  const [index, setIndex] = useState(0)
+  const [step, setStep] = useState<SurveyStep>({ kind: 'question', index: 0, returnToReview: false })
   const [answers, setAnswers] = useState<Record<string, Rating>>({})
   const [showConfirm, setShowConfirm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-  const sending = useRef(false)
+  const submissionGuard = useRef(createSubmissionGuard())
 
   useEffect(() => {
     if (!templateId) return
@@ -64,34 +66,44 @@ export function SurveyPage() {
   }} />
 
   const questions = questionState.questions
-  const question = questions[index]
-  if (!question) return <SurveyState title="Cuestionario no disponible" />
+  const question = step.kind === 'question' ? questions[step.index] : null
+  if (questions.length !== 15 || (step.kind === 'question' && !question)) return <SurveyState title="Cuestionario no disponible" />
 
   const next = () => {
-    if (answers[question.id] === undefined) {
+    if (!question || answers[question.id] === undefined) {
       setErrorMessage('Selecciona una respuesta para continuar.')
       return
     }
     setErrorMessage('')
-    if (index === questions.length - 1) setShowConfirm(true)
-    else setIndex(index + 1)
+    setStep(nextSurveyStep(step, questions.length, true))
+  }
+
+  const openConfirmation = () => {
+    if (step.kind !== 'review' || !isReviewComplete(questions, answers) || submitting) {
+      setErrorMessage('Responde los 15 reactivos antes de enviar.')
+      return
+    }
+    setErrorMessage('')
+    setShowConfirm(true)
   }
 
   const confirm = async () => {
-    if (sending.current) return
-    sending.current = true
-    setSubmitting(true)
-    setErrorMessage('')
+    if (step.kind !== 'review' || !showConfirm || !isReviewComplete(questions, answers)) return
     try {
-      await submitStudentEvaluation(evaluation, questions, answers)
-      navigate('/student/evaluations/' + evaluation.id + '/success', { replace: true })
+      await submissionGuard.current.run(async () => {
+        setSubmitting(true)
+        setErrorMessage('')
+        try {
+          await submitStudentEvaluation(evaluation, questions, answers)
+          navigate('/student/evaluations/' + evaluation.id + '/success', { replace: true })
+        } finally {
+          setSubmitting(false)
+        }
+      })
     } catch (error) {
       setShowConfirm(false)
       setErrorMessage(submissionMessage(error instanceof StudentEvaluationError ? error.kind : 'network'))
       reload()
-    } finally {
-      sending.current = false
-      setSubmitting(false)
     }
   }
 
@@ -105,18 +117,27 @@ export function SurveyPage() {
         <div className="teacher-info"><h2>{evaluation.teacherName}</h2><p>{evaluation.subjectName} · Grupo {evaluation.groupCode} · {evaluation.periodName}</p></div>
         <span className="anonymous-badge"><LockKeyhole size={16} aria-hidden="true" /> Evaluación anónima</span>
       </section>
-      <SurveyQuestion question={question} number={index + 1} total={questions.length} value={answers[question.id]} onChange={(value) => {
+      {question ? <SurveyQuestion question={question} number={step.kind === 'question' ? step.index + 1 : 1} total={questions.length} value={answers[question.id]} onChange={(value) => {
         setAnswers((current) => ({ ...current, [question.id]: value }))
         setErrorMessage('')
       }}>
         <div className="survey-nav">
-          <button className="button button-outline" type="button" disabled={index === 0} onClick={() => { setIndex(index - 1); setErrorMessage('') }}><ArrowLeft size={17} aria-hidden="true" /> Anterior</button>
-          <button className="button button-primary" type="button" onClick={next}>{index === questions.length - 1 ? 'Enviar evaluación' : 'Siguiente'} <ArrowRight size={17} aria-hidden="true" /></button>
+          <button className="button button-outline" type="button" disabled={step.kind !== 'question' || step.index === 0} onClick={() => {
+            if (step.kind === 'question') setStep({ ...step, index: step.index - 1 })
+            setErrorMessage('')
+          }}><ArrowLeft size={17} aria-hidden="true" /> Anterior</button>
+          <button className="button button-primary" type="button" onClick={next}>{step.kind === 'question' && step.returnToReview ? 'Guardar y revisar' : step.kind === 'question' && step.index === questions.length - 1 ? 'Revisar respuestas' : 'Siguiente'} <ArrowRight size={17} aria-hidden="true" /></button>
         </div>
-      </SurveyQuestion>
+      </SurveyQuestion> : <SurveyReview questions={questions} answers={answers} disabled={submitting} onEdit={(index) => {
+        setStep({ kind: 'question', index, returnToReview: true })
+        setErrorMessage('')
+      }} onBack={() => {
+        setStep({ kind: 'question', index: questions.length - 1, returnToReview: true })
+        setErrorMessage('')
+      }} onSubmit={openConfirmation} />}
       {errorMessage && <p className="form-error survey-error" role="alert">{errorMessage}</p>}
       <p className="survey-privacy"><ShieldCheck size={16} aria-hidden="true" /> Información protegida. El docente solo verá resultados agregados.</p>
     </main>
-    {showConfirm && <ConfirmationModal onCancel={() => setShowConfirm(false)} onConfirm={confirm} submitting={submitting} />}
+    {showConfirm && <ConfirmationModal onCancel={() => setShowConfirm(false)} onConfirm={() => void confirm()} submitting={submitting} />}
   </div>
 }
