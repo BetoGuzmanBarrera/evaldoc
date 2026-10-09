@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test:final-qa": "node --experimental-strip-types --test tests/email-confirmation.test.mjs tests/survey-review.test.mjs",
     "test:pdf": "node --experimental-strip-types --test tests/pdf-reports.test.mjs",
     "test:auth": "node --experimental-strip-types --test tests/account-security.test.mjs",
     "test:auth:local": "node --experimental-strip-types --test tests/account-security.local.test.mjs",

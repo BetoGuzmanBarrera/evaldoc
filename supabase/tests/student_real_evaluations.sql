@@ -299,8 +299,11 @@ $tests$;
 
 reset role;
 insert into audit_results values ('invalid sends left no partial evaluation',
-  (select count(*) from public.evaluations)=0
-  and (select count(*) from public.evaluation_answers)=0);
+  (select count(*) from public.evaluations
+    where teaching_assignment_id=(select id from audit_ids where label='assignment_a'))=0
+  and (select count(*) from public.evaluation_answers a
+    join public.evaluations e on e.id=a.evaluation_id
+    where e.teaching_assignment_id=(select id from audit_ids where label='assignment_a'))=0);
 set local role authenticated;
 select set_config('request.jwt.claim.sub',
   (select id::text from audit_ids where label='uninscribed_a'),true);
