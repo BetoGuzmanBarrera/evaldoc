@@ -3,9 +3,9 @@ import { InstitutionalFeedback } from '../ui/InstitutionalFeedback'
 import { useInstitutionalData } from '../../hooks/useInstitutionalData'
 import { decideRegistrationRequest, loadPendingRegistrationRequests } from '../../lib/registrationRequests'
 
-export function PendingRequestsPanel({ onChanged }: { onChanged: () => void }) {
+export function PendingRequestsPanel({ onChanged, role }: { onChanged: () => void; role: 'admin' | 'coordinator' }) {
   const loader = useCallback(() => loadPendingRegistrationRequests(), [])
-  const requests = useInstitutionalData('admin-pending-requests', loader)
+  const requests = useInstitutionalData('institutional-pending-requests:' + role, loader)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [actionError, setActionError] = useState('')
   const deciding = useRef(false)
@@ -28,9 +28,9 @@ export function PendingRequestsPanel({ onChanged }: { onChanged: () => void }) {
   }
 
   return <section className="admin-request-section" aria-labelledby="admin-requests-title">
-    <div className="section-between"><h2 className="institutional-section-title" id="admin-requests-title">Solicitudes pendientes</h2>
+    <div className="section-between"><h2 className="institutional-section-title" id="admin-requests-title">{role === 'admin' ? 'Solicitudes de coordinación' : 'Solicitudes de estudiantes y docentes'}</h2>
       {requests.data && <strong>{requests.data.length}</strong>}</div>
-    <p className="institutional-readonly-note">Aprobar el rol no crea inscripciones ni asignaciones a grupos.</p>
+    <p className="institutional-readonly-note">{role === 'admin' ? 'La aprobación técnica activa únicamente el rol de coordinación.' : 'Aprobar el rol no crea inscripciones ni asignaciones a grupos.'}</p>
     <InstitutionalFeedback loading={requests.loading} error={requests.error} onRetry={requests.reload} />
     {actionError && <p className="form-error" role="alert">{actionError}</p>}
     {requests.data?.length === 0 && <div className="surface admin-request-empty">No hay solicitudes pendientes en tu institución.</div>}
@@ -39,9 +39,9 @@ export function PendingRequestsPanel({ onChanged }: { onChanged: () => void }) {
         <div><h3>{request.name}</h3><p>{request.email}</p></div>
         <dl>
           <div><dt>Institución</dt><dd>{request.institution}</dd></div>
-          <div><dt>Tipo solicitado</dt><dd>{request.requestedRole === 'teacher' ? 'Docente' : 'Estudiante'}</dd></div>
-          <div><dt>Programa solicitado</dt><dd>{request.program ?? 'No aplica'}</dd></div>
-          <div><dt>Materias solicitadas</dt><dd>{request.subjects.join(', ')}</dd></div>
+          <div><dt>Tipo solicitado</dt><dd>{request.requestedRole === 'coordinator' ? 'Coordinador' : request.requestedRole === 'teacher' ? 'Docente' : 'Estudiante'}</dd></div>
+          {request.requestedRole !== 'coordinator' && <><div><dt>Programa solicitado</dt><dd>{request.program ?? 'No aplica'}</dd></div>
+          <div><dt>Materias solicitadas</dt><dd>{request.subjects.join(', ')}</dd></div></>}
           <div><dt>Estado</dt><dd>Pendiente</dd></div>
         </dl>
         <div className="admin-request-actions">

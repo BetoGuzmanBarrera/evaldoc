@@ -1,8 +1,15 @@
 import type { RegistrationProgram, RegistrationSubject } from './registrationCatalog'
 
-export type RequestedRole = 'student' | 'teacher'
+export type RequestedRole = 'student' | 'teacher' | 'coordinator'
 
 export function registrationLabels(role: RequestedRole) {
+  if (role === 'coordinator') {
+    return {
+      identifier: 'Número de empleado',
+      subjects: '',
+      note: 'Tu institución deberá validar tu solicitud de coordinación.',
+    }
+  }
   return role === 'teacher'
     ? {
       identifier: 'Número de empleado',
@@ -34,6 +41,7 @@ export function availableSubjects(
   subjects: RegistrationSubject[], role: RequestedRole, programId: string,
 ): RegistrationSubject[] {
   if (role === 'teacher') return subjects
+  if (role === 'coordinator') return []
   return subjects.filter((subject) => subject.program_id === null || subject.program_id === programId)
 }
 
@@ -45,6 +53,7 @@ export function validAcademicSelection(
   programs: RegistrationProgram[],
   subjects: RegistrationSubject[],
 ): boolean {
+  if (role === 'coordinator') return Boolean(institutionId) && !programId && subjectIds.length === 0
   if (role === 'student' && !programs.some((item) => item.id === programId && item.institution_id === institutionId)) return false
   const available = availableSubjects(subjects, role, programId)
   return subjectIds.length > 0
@@ -67,6 +76,6 @@ export function registrationMetadata(
     institutional_identifier: identifier,
     requested_role: role,
     ...(role === 'student' ? { requested_program_id: programId } : {}),
-    requested_subject_ids: subjectIds,
+    ...(role !== 'coordinator' ? { requested_subject_ids: subjectIds } : {}),
   }
 }

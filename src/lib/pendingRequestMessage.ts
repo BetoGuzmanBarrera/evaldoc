@@ -11,6 +11,12 @@ export function pendingRequestMessage(
       description: `Contacta a ${institutionName} para conocer los siguientes pasos.`,
     }
   }
+  if (requestedRole === 'coordinator') {
+    return {
+      heading: 'Tu solicitud de coordinación está pendiente',
+      description: `Tu institución deberá validar tu solicitud de coordinación. Institución: ${institutionName}.`,
+    }
+  }
   if (requestedRole === 'teacher') {
     return {
       heading: 'Tu solicitud de cuenta docente está pendiente',

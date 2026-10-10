@@ -3,6 +3,7 @@ import { test } from 'node:test'
 import { meetsPasswordPolicy, passwordRequirements, passwordsMatch } from '../src/auth/passwordPolicy.ts'
 import { authMessage } from '../src/auth/messages.ts'
 import { isRecoveryRedirectSession } from '../src/auth/recoveryRedirect.ts'
+import { recoveryNeutralMessage } from '../src/auth/recoveryMessages.ts'
 
 test('contraseña sin mayúscula falla', () => assert.equal(meetsPasswordPolicy('segura123!'), false))
 test('contraseña sin minúscula falla', () => assert.equal(meetsPasswordPolicy('SEGURA123!'), false))
@@ -30,4 +31,8 @@ test('una sesión normal o token diferente no habilita reset', () => {
   assert.equal(isRecoveryRedirectSession('#type=signup&access_token=demo-token&refresh_token=demo-refresh', 'demo-token'), false)
   assert.equal(isRecoveryRedirectSession('#type=recovery&access_token=otro-token&refresh_token=demo-refresh', 'demo-token'), false)
   assert.equal(isRecoveryRedirectSession('#type=recovery&access_token=demo-token', 'demo-token'), false)
+})
+
+test('recuperación muestra respuesta neutral sin enumerar cuentas', () => {
+  assert.equal(recoveryNeutralMessage, 'Si existe una cuenta asociada a ese correo, recibirás instrucciones.')
 })

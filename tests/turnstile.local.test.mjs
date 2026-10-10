@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { randomBytes, randomUUID } from 'node:crypto'
+import { execFileSync } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
-import { test } from 'node:test'
+import { after, test } from 'node:test'
 import { createClient } from '@supabase/supabase-js'
 
 const envText = await readFile(new URL('../.env.local', import.meta.url), 'utf8')
@@ -20,6 +21,20 @@ const auth = createClient(url.origin, env.VITE_SUPABASE_ANON_KEY, {
 const captchaToken = 'XXXX.DUMMY.TOKEN.XXXX'
 const email = `qa.turnstile.${randomUUID()}@example.test`
 const password = `Qa1!${randomBytes(12).toString('hex')}`
+
+let createdUserId = null
+after(() => {
+  if (!createdUserId) return
+  assert.match(createdUserId, /^[0-9a-f-]{36}$/)
+  assert.match(email, /^qa\.turnstile\.[0-9a-f-]+@example\.test$/)
+  const sql = "delete from auth.users where id='" + createdUserId
+    + "' and email='" + email + "' returning id;"
+  const deleted = execFileSync('docker', [
+    'exec', 'supabase_db_evaldoc', 'psql', '-X', '-qAt',
+    '-U', 'postgres', '-d', 'postgres', '-c', sql,
+  ], { encoding: 'utf8' }).trim()
+  assert.equal(deleted, createdUserId, 'Only the newly created local fixture must be removed')
+})
 
 if (process.env.EVALDOC_EXPECT_CAPTCHA_REJECTION !== '1') test('Supabase Auth local valida Turnstile en los tres flujos públicos', async (t) => {
   const institutions = await createClient(url.origin, env.VITE_SUPABASE_ANON_KEY)
@@ -43,6 +58,7 @@ if (process.env.EVALDOC_EXPECT_CAPTCHA_REJECTION !== '1') test('Supabase Auth lo
     const result = await auth.signUp({ email, password, options: { captchaToken, data } })
     assert.equal(result.error, null)
     assert.ok(result.data.user?.id)
+    createdUserId = result.data.user.id
     assert.equal(result.data.session, null)
   })
   await t.test('token de prueba válido pasa CAPTCHA en login; correo aún sin confirmar', async () => {

@@ -22,12 +22,12 @@ export function PendingPage() {
     let active = true
     loadOwnRegistrationRequest().then((request) => {
       if (!active) return
-      setRequestedRole(request?.requestedRole ?? (roles.includes('teacher') ? 'teacher' : 'student'))
+      setRequestedRole(request?.requestedRole ?? (roles.includes('coordinator') ? 'coordinator' : roles.includes('teacher') ? 'teacher' : 'student'))
       setRequestStatus(request?.status ?? null)
       setRequestLoading(false)
     }).catch(() => {
       if (!active) return
-      setRequestedRole(roles.includes('teacher') ? 'teacher' : 'student')
+      setRequestedRole(roles.includes('coordinator') ? 'coordinator' : roles.includes('teacher') ? 'teacher' : 'student')
       setRequestLoading(false)
     })
     return () => { active = false }
@@ -63,7 +63,7 @@ export function PendingPage() {
       <div className="pending-icon" aria-hidden="true"><Clock3 size={26} /></div>
       <h1 id="pending-title">{heading}</h1>
       <p>{description}</p>
-      {requestStatus === 'pending' && <p>Las materias solicitadas aún no crean inscripciones ni asignaciones a grupos.</p>}
+      {requestStatus === 'pending' && requestedRole !== 'coordinator' && <p>Las materias solicitadas aún no crean inscripciones ni asignaciones a grupos.</p>}
       {actionError && <p className="form-error" role="alert">{actionError}</p>}
       {!rejected && <button className="button button-outline" type="button" onClick={() => void refreshIdentity()}>Actualizar estado</button>}
       <button className="button button-primary" type="button" disabled={signingOut} onClick={() => void handleSignOut()}>{signingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}</button>

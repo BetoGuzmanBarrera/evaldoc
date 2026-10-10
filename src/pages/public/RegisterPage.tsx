@@ -40,8 +40,18 @@ export function RegisterPage() {
   const labels = registrationLabels(role)
   const visibleSubjects = availableSubjects(subjects, role, programId)
   const catalogEmptyMessage = registrationCatalogEmptyMessage(role, programs, subjects)
-  const academicReady = !catalogLoading && !catalogError
+  const academicReady = (role === 'coordinator' || (!catalogLoading && !catalogError))
     && validAcademicSelection(role, institutionId, programId, subjectIds, programs, subjects)
+
+  const changeRole = (nextRole: RequestedRole) => {
+    setRole(nextRole)
+    setProgramId('')
+    setSubjectIds([])
+    setPrograms([])
+    setSubjects([])
+    setCatalogError('')
+    setCatalogLoading(Boolean(institutionId) && nextRole !== 'coordinator')
+  }
 
   useEffect(() => {
     let active = true
@@ -60,7 +70,7 @@ export function RegisterPage() {
   }, [])
 
   useEffect(() => {
-    if (!institutionId) return
+    if (!institutionId || role === 'coordinator') return
     let active = true
     loadRegistrationCatalog(institutionId).then((catalog) => {
       if (!active) return
@@ -76,7 +86,7 @@ export function RegisterPage() {
       setCatalogLoading(false)
     })
     return () => { active = false }
-  }, [institutionId, catalogRevision])
+  }, [institutionId, catalogRevision, role])
 
   useEffect(() => {
     if (session && !loading && profile) {
@@ -97,7 +107,7 @@ export function RegisterPage() {
       return
     }
     if (!academicReady) {
-      setError('Selecciona un programa y las materias válidas para tu solicitud.')
+      setError(role === 'coordinator' ? 'Selecciona una institución válida para tu solicitud.' : 'Selecciona un programa y las materias válidas para tu solicitud.')
       return
     }
     if (!passwordReady) {
@@ -144,19 +154,18 @@ export function RegisterPage() {
       <form onSubmit={(event) => void onSubmit(event)}>
         <fieldset className="registration-role"><legend>¿Cómo usarás EvalDoc?</legend>
           <label className={role === 'student' ? 'registration-role-option selected' : 'registration-role-option'}>
-            <input type="radio" name="requestedRole" value="student" checked={role === 'student'} onChange={() => {
-              setRole('student'); setProgramId(''); setSubjectIds([])
-            }} /><span>Estudiante</span>
+            <input type="radio" name="requestedRole" value="student" checked={role === 'student'} onChange={() => changeRole('student')} /><span>Estudiante</span>
           </label>
           <label className={role === 'teacher' ? 'registration-role-option selected' : 'registration-role-option'}>
-            <input type="radio" name="requestedRole" value="teacher" checked={role === 'teacher'} onChange={() => {
-              setRole('teacher'); setProgramId(''); setSubjectIds([])
-            }} /><span>Docente</span>
+            <input type="radio" name="requestedRole" value="teacher" checked={role === 'teacher'} onChange={() => changeRole('teacher')} /><span>Docente</span>
+          </label>
+          <label className={role === 'coordinator' ? 'registration-role-option selected' : 'registration-role-option'}>
+            <input type="radio" name="requestedRole" value="coordinator" checked={role === 'coordinator'} onChange={() => changeRole('coordinator')} /><span>Coordinador</span>
           </label>
         </fieldset>
         <label className="field"><span>Institución</span><select name="institution" required value={institutionId} disabled={institutionsLoading || institutions.length === 0} onChange={(event) => {
           setInstitutionId(event.target.value); setProgramId(''); setSubjectIds([])
-          setPrograms([]); setSubjects([]); setCatalogError(''); setCatalogLoading(true)
+          setPrograms([]); setSubjects([]); setCatalogError(''); setCatalogLoading(role !== 'coordinator')
         }}><option value="" disabled>{institutionsLoading ? 'Cargando instituciones…' : 'Selecciona tu institución'}</option>{institutions.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
         {institutionsError && <p className="form-error" role="alert">{institutionsError} <button className="text-button" type="button" onClick={() => {
           setInstitutionsError('')
@@ -175,7 +184,7 @@ export function RegisterPage() {
           </select></label>}
         </div>
         {role === 'student' && institutionId && !catalogLoading && !catalogError && catalogEmptyMessage && <p className="registration-catalog-empty" role="status">{catalogEmptyMessage}</p>}
-        {institutionId && !(role === 'student' && !catalogLoading && !catalogError && catalogEmptyMessage) && <fieldset className="registration-subjects" disabled={catalogLoading || (role === 'student' && !programId)}>
+        {institutionId && role !== 'coordinator' && !(role === 'student' && !catalogLoading && !catalogError && catalogEmptyMessage) && <fieldset className="registration-subjects" disabled={catalogLoading || (role === 'student' && !programId)}>
           <legend>{labels.subjects} <span>(elige una o varias)</span></legend>
           {catalogLoading ? <p role="status">Cargando materias…</p> : catalogError ? <p role="alert">{catalogError} <button type="button" className="text-button" onClick={() => {
             setCatalogError(''); setCatalogLoading(true); setCatalogRevision((value) => value + 1)

@@ -39,7 +39,7 @@ export function AdminDashboardPage() {
   const analytics = summary.data?.analytics
   const trend = summary.data?.trend
 
-  return <InstitutionalLayout role="admin" title="Administración" subtitle="Estructura y usuarios de tu institución" period="Todos los periodos"
+  return <InstitutionalLayout role="admin" title="Administración técnica" subtitle="Mantenimiento y configuración de tu institución" period="Todos los periodos"
     actions={<div className="institutional-action-buttons"><PdfDownloadButton request={{ kind: 'progress', role: 'admin', filters: {} }} label="Avance PDF" /><PdfDownloadButton request={{ kind: 'participation', role: 'admin', filters: {} }} label="Participación PDF" /><PdfDownloadButton request={{ kind: 'history', role: 'admin', filters: {} }} label="Histórico PDF" /><PdfDownloadButton request={{ kind: 'executive', role: 'admin', filters: {} }} label="Informe PDF" className="button button-primary" /></div>}>
     <div className="institutional-content">
       <InstitutionalFeedback loading={summary.loading} error={summary.error} onRetry={summary.reload} />
@@ -84,7 +84,7 @@ export function AdminDashboardPage() {
         {users.data && <><DataTable title="Usuarios de tu institución" columns={columns} rows={users.data} getRowKey={(user) => user.id} emptyMessage="No hay usuarios que coincidan con la búsqueda." minWidth={800} />
           <p className="institutional-readonly-note">Se muestran hasta 100 perfiles por búsqueda. Las altas y los cambios de rol requieren un flujo administrativo seguro.</p></>}
       </>}
-      <PendingRequestsPanel onChanged={() => { summary.reload(); users.reload() }} />
+      <PendingRequestsPanel role="admin" onChanged={() => { summary.reload(); users.reload() }} />
     </div>
   </InstitutionalLayout>
 }

@@ -6,11 +6,11 @@ EvalDoc es un prototipo escolar funcional para evaluar la docencia en múltiples
 
 React 19, TypeScript estricto, Vite 8, Tailwind CSS, React Router, Lucide React y jsPDF para la UI y los informes; Supabase local (PostgreSQL/Auth/API) para identidad, autorización y datos. Cloudflare Turnstile protege registro, login y recuperación: su token se valida en Supabase Auth. La UI consulta RPC por rol; los datos académicos se aíslan mediante RLS y validación dentro de PostgreSQL. No hay backend Node propio ni claves privilegiadas en el navegador.
 
-Roles: **alumno**, **docente**, **coordinación**, **recursos humanos** y **administrador institucional**. Una persona puede tener más de un rol, pero una cuenta recién registrada queda `pending` con rol `student` y no obtiene acceso académico hasta su activación. El rol y la institución se resuelven desde la base, no desde metadata ni `localStorage`.
+Roles: **alumno**, **docente**, **coordinación**, **recursos humanos** y **admin técnico**. Coordinación es responsable académica institucional; admin aprueba solicitudes de coordinación y atiende mantenimiento. Una solicitud pública nueva de estudiante, docente o coordinador queda `pending` **sin rol** hasta su aprobación por la misma institución. El rol se resuelve desde la base, no desde metadata ni `localStorage`.
 
 ## Ejecución local
 
-Requisitos: Node/npm compatibles con `package.json`, Docker Desktop y Supabase CLI instalado por `npm ci`. Trabajar siempre en el proyecto local **EvalDoc** (puertos API 55421, DB 55422, Studio 55423, Mailpit 55424); no ejecutar resets de otros proyectos.
+Requisitos: Node/npm compatibles con `package.json`, Docker Desktop y Supabase CLI instalado por `npm ci`. Trabajar siempre en el proyecto local **EvalDoc** (puertos API 55421, DB 55422, Studio 55423, Mailpit 55424); no ejecutar resets de otros proyectos. El bloque siguiente corresponde únicamente a una instalación local nueva sin datos que conservar.
 
 ```powershell
 npm ci
@@ -22,7 +22,7 @@ npm run dev
 
 Configurar `.env.local` con `VITE_SUPABASE_URL=http://127.0.0.1:55421`, la **anon key pública** del proyecto local y `VITE_TURNSTILE_SITE_KEY`. La secret de Turnstile para Auth se configura en el `.env` local **ignorado por Git** como `EVALDOC_TURNSTILE_SECRET`; no se coloca en `VITE_*`. Para pruebas locales pueden usarse las claves oficiales de prueba descritas en [Turnstile](docs/turnstile-antibot.md), nunca en producción. El archivo [`.env.example`](.env.example) enumera solo las variables cliente; [`.gitignore`](.gitignore) excluye secretos. Vite normalmente abre [localhost:5173](http://localhost:5173/). Mailpit: [127.0.0.1:55424](http://127.0.0.1:55424/).
 
-El reset local aplica ocho migraciones y el seed: siete instituciones de muestra, cinco roles y una plantilla global versionada con 15 reactivos; no crea usuarios, programas ni instalaciones inventadas. **Borra los datos locales del proyecto EvalDoc**. No usarlo en producción. La activación de perfiles, matrículas, asignaciones y estructura académica requieren aprovisionamiento administrativo controlado; el registro público no otorga roles privilegiados.
+El reset local aplica todas las migraciones y el seed: siete instituciones de muestra, cinco roles y una plantilla global versionada con 15 reactivos; no crea usuarios, programas ni instalaciones inventadas. **Borra los datos locales del proyecto EvalDoc**. No usarlo en producción. La activación de perfiles, matrículas, asignaciones y estructura académica requieren aprovisionamiento administrativo controlado; el registro público no otorga roles privilegiados.
 
 ## Rutas y funciones
 
@@ -40,7 +40,7 @@ npm run test:turnstile
 npm run test:turnstile:local
 ```
 
-Las suites SQL en `supabase/tests/` se ejecutan contra la base local con `psql` y concluyen con `ROLLBACK`; el procedimiento y resultados están en [validación final](docs/final-validation.md). Las pruebas locales de Auth crean usuarios ficticios: ejecutar luego `npx.cmd supabase db reset --local` para limpiar. Verificar siempre el puerto 55421 antes de probar.
+Las suites SQL en `supabase/tests/` se ejecutan contra la base local con `psql` y concluyen con `ROLLBACK`; el procedimiento y resultados están en [validación final](docs/final-validation.md). Las pruebas locales de Auth y Turnstile crean usuarios ficticios y eliminan únicamente sus propios fixtures al finalizar; verificar siempre el puerto 55421 y los conteos QA antes/después. No ejecutar `db reset` para limpiar pruebas cuando se preserva un escenario local.
 
 Carpetas principales: `src/pages` y `src/components` (UI); `src/auth`, `src/hooks`, `src/lib`, `src/routes` (sesión, consultas y permisos visuales); `supabase/migrations`, `supabase/seed.sql`, `supabase/tests` (modelo y reglas); `tests` (pruebas Node); `design/reference` (PNG de referencia); `docs` (DER, diccionario, seguridad, evidencia y reporte escolar).
 

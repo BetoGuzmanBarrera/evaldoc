@@ -24,7 +24,7 @@ export async function loadOwnRegistrationRequest(): Promise<{
 }
 
 export async function loadPendingRegistrationRequests(): Promise<PendingRegistrationRequest[]> {
-  const { data, error } = await supabase.rpc('admin_pending_registration_requests')
+  const { data, error } = await supabase.rpc('institutional_pending_registration_requests')
   if (error || !Array.isArray(data)) throw new Error('pending_requests_unavailable')
   return data.map((row) => ({
     id: row.request_id as string,
@@ -39,7 +39,7 @@ export async function loadPendingRegistrationRequests(): Promise<PendingRegistra
 }
 
 export async function decideRegistrationRequest(id: string, approve: boolean): Promise<void> {
-  const { error } = await supabase.rpc('admin_decide_registration_request', {
+  const { error } = await supabase.rpc('institutional_decide_registration_request', {
     p_request_id: id, p_approve: approve,
   })
   if (error) throw new Error('registration_decision_failed')

@@ -60,7 +60,7 @@ async function confirmedClient(email) {
   return auth
 }
 
-test('Auth local: estudiante y docente solicitan sin recibir roles antes de aprobar', async (t) => {
+test('Auth local: estudiante, docente y coordinador solicitan sin recibir roles antes de aprobar', async (t) => {
   const anonymous = client()
   const institution = await anonymous.from('institutions').select('id')
     .eq('slug', 'universidad-anahuac').single()
@@ -76,7 +76,7 @@ test('Auth local: estudiante y docente solicitan sin recibir roles antes de apro
   const programId = programs.data[0].id
   const subjectId = subjects.data[0].id
 
-  for (const role of ['student', 'teacher']) {
+  for (const role of ['student', 'teacher', 'coordinator']) {
     await t.test(`solicitud ${role} confirma correo y sigue pending sin roles`, async () => {
       const email = `qa.role16.${randomUUID()}@example.test`
       const metadata = {
@@ -84,7 +84,7 @@ test('Auth local: estudiante y docente solicitan sin recibir roles antes de apro
         full_name: `QA ${role}`,
         institutional_identifier: `QA16-${randomUUID()}`,
         requested_role: role,
-        requested_subject_ids: [subjectId],
+        ...(role !== 'coordinator' ? { requested_subject_ids: [subjectId] } : {}),
         ...(role === 'student' ? { requested_program_id: programId } : {}),
       }
       const signup = await anonymous.auth.signUp({
@@ -109,7 +109,7 @@ test('Auth local: estudiante y docente solicitan sin recibir roles antes de apro
       assert.equal(request.error, null)
       assert.equal(request.data[0].requested_role, role)
       assert.equal(request.data[0].status, 'pending')
-      const denied = await authenticated.rpc('admin_pending_registration_requests')
+      const denied = await authenticated.rpc('institutional_pending_registration_requests')
       assert.deepEqual(denied.data, [])
       await authenticated.auth.signOut()
     })
