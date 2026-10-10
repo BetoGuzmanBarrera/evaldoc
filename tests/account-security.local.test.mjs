@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { randomBytes, randomUUID } from 'node:crypto'
+import { execFileSync } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
-import { test } from 'node:test'
+import { after, test } from 'node:test'
 import { createClient } from '@supabase/supabase-js'
 
 const envText = await readFile(new URL('../.env.local', import.meta.url), 'utf8')
@@ -21,6 +22,20 @@ const password = `Qa1!${randomBytes(12).toString('hex')}`
 const nextPassword = `Qb2@${randomBytes(12).toString('hex')}`
 // Official Cloudflare dummy token; accepted only with the ignored local dummy secret.
 const captchaToken = 'XXXX.DUMMY.TOKEN.XXXX'
+let createdUserId = null
+
+after(() => {
+  if (!createdUserId) return
+  assert.match(createdUserId, /^[0-9a-f-]{36}$/)
+  assert.match(email, /^qa\.account\.[0-9a-f-]+@example\.test$/)
+  const sql = "delete from auth.users where id='" + createdUserId
+    + "' and email='" + email + "' returning id;"
+  const deleted = execFileSync('docker', [
+    'exec', 'supabase_db_evaldoc', 'psql', '-X', '-qAt',
+    '-U', 'postgres', '-d', 'postgres', '-c', sql,
+  ], { encoding: 'utf8' }).trim()
+  assert.equal(deleted, createdUserId, 'Only the newly created local fixture must be removed')
+})
 
 async function mailForUser(previousIds = new Set()) {
   for (let attempt = 0; attempt < 30; attempt++) {
@@ -74,6 +89,7 @@ test('Auth local y Mailpit: confirmación, pending y recuperación real', async 
     assert.equal(result.error, null)
     assert.ok(!result.data.session, 'signup must not establish a session before email confirmation')
     assert.ok(result.data.user?.id)
+    createdUserId = result.data.user.id
   })
   await t.test('login antes de confirmar es bloqueado', async () => {
     const result = await anonymous.auth.signInWithPassword({ email, password, options: { captchaToken } })

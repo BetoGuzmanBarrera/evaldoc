@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { PendingRequestsPanel } from '../../components/admin/PendingRequestsPanel'
 import { ParticipationChart } from '../../components/charts/ParticipationChart'
 import { AnalyticsTrendChart } from '../../components/charts/AnalyticsTrendChart'
 import { ScoreRing } from '../../components/charts/ScoreRing'
@@ -11,6 +12,7 @@ import { MetricCard } from '../../components/ui/MetricCard'
 import { PdfDownloadButton } from '../../components/ui/PdfDownloadButton'
 import { AnalyticsExtremes, PeriodComparisonCard } from '../../components/ui/AnalyticsInsights'
 import { useInstitutionalData } from '../../hooks/useInstitutionalData'
+import { useAuth } from '../../hooks/useAuth'
 import {
   loadAnalyticsBreakdown, loadAnalyticsOverview, loadAnalyticsTrend,
   loadPeriodComparison, loadQuestionAnalytics,
@@ -55,6 +57,7 @@ const scopes: { id: ParticipationScope; label: string }[] = [
 ]
 
 export function CoordinatorDashboardPage() {
+  const { profile } = useAuth()
   const [filters, setFilters] = useState<InstitutionalFilters>({})
   const [scope, setScope] = useState<ParticipationScope>('campus')
   const loader = useCallback(async () => {
@@ -83,8 +86,9 @@ export function CoordinatorDashboardPage() {
     <PdfDownloadButton request={{ kind: 'executive', role: 'coordinator', filters }} label="Informe PDF" className="button button-primary" />
   </div>
 
-  return <InstitutionalLayout role="coordinator" title="Panel de Coordinación" subtitle="Monitoreo de participación y desempeño institucional" period={periodName} actions={actions}>
+  return <InstitutionalLayout role="coordinator" title="Panel de Coordinación" subtitle={`Responsable académico de ${profile?.institution_name ?? 'tu institución'}`} period={periodName} actions={actions}>
     <div className="institutional-content">
+      <PendingRequestsPanel role="coordinator" onChanged={reload} />
       <InstitutionalFeedback loading={loading} error={error} onRetry={reload} />
       {data && <>
         <FilterBar filters={dashboardFilters} values={{ campus: filters.campus ?? '', program: filters.program ?? '', group: filters.group ?? '', period: filters.period ?? '' }} onChange={(id, value) => setFilters((current) => ({ ...current, [id]: value || undefined, ...(id === 'campus' ? { program: undefined, group: undefined } : id === 'program' || id === 'period' ? { group: undefined } : {}) }))} />

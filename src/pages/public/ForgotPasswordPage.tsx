@@ -1,10 +1,9 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { recoveryNeutralMessage } from '../../auth/recoveryMessages'
 import { TurnstileWidget, type TurnstileWidgetHandle } from '../../components/security/TurnstileWidget'
 import { Brand } from '../../components/ui/Brand'
 import { supabase } from '../../lib/supabase'
-
-const neutralMessage = 'Si existe una cuenta asociada a ese correo, recibirás instrucciones.'
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -47,7 +46,7 @@ export function ForgotPasswordPage() {
   return <main className="account-page"><section className="account-card surface" aria-labelledby="forgot-title">
     <Brand /><h1 id="forgot-title">Recuperar contraseña</h1>
     <p className="auth-subtitle">Escribe tu correo institucional para solicitar un enlace de recuperación.</p>
-    {sent ? <p className="form-note" role="status">{neutralMessage}</p> : <form onSubmit={(event) => void onSubmit(event)}>
+    {sent ? <p className="form-note" role="status">{recoveryNeutralMessage}</p> : <form onSubmit={(event) => void onSubmit(event)}>
       <label className="field"><span>Correo institucional</span><input type="email" name="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
       <TurnstileWidget ref={captcha} onTokenChange={setCaptchaToken} />
       {error && <p className="form-error" role="alert">{error}</p>}

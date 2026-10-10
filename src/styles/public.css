@@ -102,7 +102,7 @@ html:has(.landing){scrollbar-width:none}
 @media(max-width:600px){.account-page{padding:16px;place-items:start center}.account-card{padding:26px 22px;margin-top:32px}.password-requirements{grid-template-columns:1fr}.login-options{align-items:flex-start;flex-wrap:wrap}}
 @media(max-width:600px){.login-card{padding-left:16px;padding-right:16px}.account-card{padding-left:20px;padding-right:20px}}
 
-.registration-role{border:0;padding:0;margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.registration-role{border:0;padding:0;margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .registration-role legend,.registration-subjects legend{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:9px}
 .registration-role-option{display:flex;align-items:center;gap:9px;min-height:48px;border:1px solid var(--border);border-radius:11px;padding:0 14px;font-size:14px;font-weight:600;cursor:pointer}
 .registration-role-option.selected{border-color:var(--primary);background:#EFF6FF;color:var(--navy)}
@@ -117,4 +117,4 @@ html:has(.landing){scrollbar-width:none}
 .registration-subject-list label:hover{background:var(--bg)}
 .registration-subject-list small{color:var(--muted);margin-left:4px}
 .registration-explanation{font-size:12px;line-height:1.5;color:var(--navy);background:#EFF6FF;border-radius:10px;padding:11px 13px}
-@media(max-width:600px){.registration-role-option{min-height:52px;padding:0 10px}.registration-subject-list{max-height:240px}}
+@media(max-width:600px){.registration-role{grid-template-columns:1fr}.registration-role-option{min-height:52px;padding:0 10px}.registration-subject-list{max-height:240px}}

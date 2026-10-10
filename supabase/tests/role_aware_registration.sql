@@ -18,7 +18,7 @@ declare
   teacher_a uuid := 'a3000000-0000-4000-8000-000000000002';
   reject_a uuid := 'a3000000-0000-4000-8000-000000000003';
   student_b uuid := 'a3000000-0000-4000-8000-000000000004';
-  admin_a uuid := 'a3000000-0000-4000-8000-000000000005';
+  coordinator_a uuid := 'a3000000-0000-4000-8000-000000000005';
   legacy_a uuid := 'a3000000-0000-4000-8000-000000000006';
   base jsonb;
   requested jsonb;
@@ -30,7 +30,7 @@ begin
     ('ipn',ipn),('unam',unam),('program_a',program_a),('program_b',program_b),
     ('subject_a1',subject_a1),('subject_a2',subject_a2),('subject_b',subject_b),
     ('student_a',student_a),('teacher_a',teacher_a),('reject_a',reject_a),
-    ('student_b',student_b),('admin_a',admin_a),('legacy_a',legacy_a);
+    ('student_b',student_b),('coordinator_a',coordinator_a),('legacy_a',legacy_a);
 
   insert into public.programs (id,institution_id,name,code)
     values (program_a,ipn,'QA Programa A','QA16-A'),
@@ -92,11 +92,11 @@ begin
         'requested_subject_ids',pg_catalog.jsonb_build_array(subject_b::text)),now());
 
   insert into auth.users (id,email,raw_user_meta_data,email_confirmed_at)
-    values (admin_a,'qa16.admin@example.test',
+    values (coordinator_a,'qa16.admin@example.test',
       (base || pg_catalog.jsonb_build_object('institutional_identifier','QA16-ADMIN')),now());
-  update public.profiles set status='active' where id=admin_a;
+  update public.profiles set status='active' where id=coordinator_a;
   insert into public.user_roles (profile_id,institution_id,role_id)
-    select admin_a,ipn,id from public.roles where code='admin';
+    select coordinator_a,ipn,id from public.roles where code='coordinator';
 
   insert into auth.users (id,email,raw_user_meta_data,email_confirmed_at)
     values (legacy_a,'qa16.legacy@example.test',
@@ -111,7 +111,7 @@ begin
     select 1 from public.registration_requests where profile_id=legacy_a
   ));
 
-  foreach role_code in array array['admin','hr','coordinator'] loop
+  foreach role_code in array array['admin','hr'] loop
     begin
       insert into auth.users (id,email,raw_user_meta_data)
         values (gen_random_uuid(),'qa16.invalid.'||role_code||'@example.test',
@@ -175,11 +175,11 @@ select set_config('request.jwt.claim.sub',(select id::text from qa_ids where nam
 insert into qa_results values ('pending user sees own request', (
   select count(*) from public.registration_requests)=1);
 insert into qa_results values ('nonadmin list is empty', not exists (
-  select 1 from public.admin_pending_registration_requests()));
+  select 1 from public.institutional_pending_registration_requests()));
 do $unauthorized$
 begin
   begin
-    perform public.admin_decide_registration_request(
+    perform public.institutional_decide_registration_request(
       (select id from qa_ids where name='request_student_a'),true);
     insert into qa_results values ('nonadmin cannot approve',false);
   exception when insufficient_privilege then
@@ -195,13 +195,13 @@ insert into qa_results values ('request table has no client writes',
   and not has_table_privilege('authenticated','public.registration_request_subjects','INSERT'));
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub',(select id::text from qa_ids where name='admin_a'),true);
-insert into qa_results values ('admin list tenant scoped', (
-  select count(*) from public.admin_pending_registration_requests())=3);
+select set_config('request.jwt.claim.sub',(select id::text from qa_ids where name='coordinator_a'),true);
+insert into qa_results values ('coordinator list tenant scoped', (
+  select count(*) from public.institutional_pending_registration_requests())=3);
 do $cross$
 begin
   begin
-    perform public.admin_decide_registration_request(
+    perform public.institutional_decide_registration_request(
       (select id from qa_ids where name='request_student_b'),true);
     insert into qa_results values ('cross tenant approval rejected',false);
   exception when insufficient_privilege then
@@ -209,11 +209,11 @@ begin
   end;
 end
 $cross$;
-select public.admin_decide_registration_request(
+select public.institutional_decide_registration_request(
   (select id from qa_ids where name='request_teacher_a'),true);
-select public.admin_decide_registration_request(
+select public.institutional_decide_registration_request(
   (select id from qa_ids where name='request_student_a'),true);
-select public.admin_decide_registration_request(
+select public.institutional_decide_registration_request(
   (select id from qa_ids where name='request_reject_a'),false);
 reset role;
 
