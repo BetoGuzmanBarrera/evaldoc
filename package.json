@@ -7,11 +7,27 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test": "node --experimental-strip-types --test",
+    "test:role-aware": "node --experimental-strip-types --test tests/role-aware-registration.test.mjs",
+    "test:role-aware:local": "node --test tests/role-aware-registration.local.test.mjs",
+    "test:final-qa": "node --experimental-strip-types --test tests/email-confirmation.test.mjs tests/survey-review.test.mjs",
+    "test:pdf": "node --experimental-strip-types --test tests/pdf-reports.test.mjs",
+    "test:auth": "node --experimental-strip-types --test tests/account-security.test.mjs",
+    "test:auth:local": "node --experimental-strip-types --test tests/account-security.local.test.mjs",
+    "test:turnstile:local": "node --test tests/turnstile.local.test.mjs",
+    "test:turnstile": "node --experimental-strip-types --test tests/turnstile.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.3.0",
+    "@supabase/supabase-js": "2.117.2",
+    "@tailwindcss/vite": "^4.3.3",
+    "jspdf": "4.2.1",
+    "lucide-react": "^1.48.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.4",
+    "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -23,6 +39,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.6",
     "globals": "^17.12.0",
+    "supabase": "^2.118.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.69.0",
     "vite": "^8.3.0"
