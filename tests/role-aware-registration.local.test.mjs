@@ -18,6 +18,7 @@ const client = () => createClient(apiUrl.origin, env.VITE_SUPABASE_ANON_KEY, {
 const mailpit = 'http://127.0.0.1:55424'
 const captchaToken = 'XXXX.DUMMY.TOKEN.XXXX'
 const createdUsers = []
+let createdSubject = null
 
 after(() => {
   for (const { id, email } of createdUsers) {
@@ -29,6 +30,13 @@ after(() => {
       '-U', 'postgres', '-d', 'postgres', '-c', sql,
     ], { encoding: 'utf8' }).trim()
     assert.equal(deleted, id, 'Only the newly created local fixture must be removed')
+  }
+  if (createdSubject) {
+    const deleted = execFileSync('docker', ['exec', 'supabase_db_evaldoc', 'psql', '-X', '-qAt',
+      '-U', 'postgres', '-d', 'postgres', '-c',
+      `delete from public.subjects where id='${createdSubject.id}' and code='${createdSubject.code}' returning id;`,
+    ], { encoding: 'utf8' }).trim()
+    assert.equal(deleted, createdSubject.id)
   }
 })
 
@@ -66,15 +74,24 @@ test('Auth local: estudiante, docente y coordinador solicitan sin recibir roles 
     .eq('slug', 'universidad-anahuac').single()
   assert.equal(institution.error, null)
   const institutionId = institution.data.id
+  const campuses = await anonymous.from('campuses').select('id')
+    .eq('institution_id', institutionId).eq('name', 'México Campus Norte').single()
+  assert.equal(campuses.error, null)
+  const campusId = campuses.data.id
   const programs = await anonymous.from('programs').select('id')
-    .eq('institution_id', institutionId).eq('active', true)
-  const subjects = await anonymous.from('subjects').select('id')
-    .eq('institution_id', institutionId).eq('active', true)
+    .eq('institution_id', institutionId).eq('campus_id', campusId)
+    .eq('catalog_visible', true).eq('active', true).limit(1)
   assert.equal(programs.error, null)
-  assert.equal(subjects.error, null)
-  assert.ok(programs.data.length > 0 && subjects.data.length > 0)
+  assert.equal(programs.data.length, 1)
   const programId = programs.data[0].id
-  const subjectId = subjects.data[0].id
+  const subjectId = randomUUID()
+  const code = `QA18-${randomBytes(5).toString('hex')}`
+  const inserted = execFileSync('docker', ['exec', 'supabase_db_evaldoc', 'psql', '-X', '-qAt',
+    '-U', 'postgres', '-d', 'postgres', '-c',
+    `insert into public.subjects (id,institution_id,program_id,name,code) values ('${subjectId}','${institutionId}','${programId}','QA18 Materia temporal','${code}') returning id;`,
+  ], { encoding: 'utf8' }).trim()
+  assert.equal(inserted, subjectId)
+  createdSubject = { id: subjectId, code }
 
   for (const role of ['student', 'teacher', 'coordinator']) {
     await t.test(`solicitud ${role} confirma correo y sigue pending sin roles`, async () => {
@@ -84,7 +101,7 @@ test('Auth local: estudiante, docente y coordinador solicitan sin recibir roles 
         full_name: `QA ${role}`,
         institutional_identifier: `QA16-${randomUUID()}`,
         requested_role: role,
-        ...(role !== 'coordinator' ? { requested_subject_ids: [subjectId] } : {}),
+        ...(role !== 'coordinator' ? { requested_campus_id: campusId, requested_subject_ids: [subjectId] } : {}),
         ...(role === 'student' ? { requested_program_id: programId } : {}),
       }
       const signup = await anonymous.auth.signUp({

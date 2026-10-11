@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { AcademicManagementPanel } from '../../components/coordinator/AcademicManagementPanel'
 import { PendingRequestsPanel } from '../../components/admin/PendingRequestsPanel'
 import { ParticipationChart } from '../../components/charts/ParticipationChart'
 import { AnalyticsTrendChart } from '../../components/charts/AnalyticsTrendChart'
@@ -89,6 +90,7 @@ export function CoordinatorDashboardPage() {
   return <InstitutionalLayout role="coordinator" title="Panel de Coordinación" subtitle={`Responsable académico de ${profile?.institution_name ?? 'tu institución'}`} period={periodName} actions={actions}>
     <div className="institutional-content">
       <PendingRequestsPanel role="coordinator" onChanged={reload} />
+      <AcademicManagementPanel onChanged={reload} />
       <InstitutionalFeedback loading={loading} error={error} onRetry={reload} />
       {data && <>
         <FilterBar filters={dashboardFilters} values={{ campus: filters.campus ?? '', program: filters.program ?? '', group: filters.group ?? '', period: filters.period ?? '' }} onChange={(id, value) => setFilters((current) => ({ ...current, [id]: value || undefined, ...(id === 'campus' ? { program: undefined, group: undefined } : id === 'program' || id === 'period' ? { group: undefined } : {}) }))} />
