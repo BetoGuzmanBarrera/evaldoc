@@ -64,13 +64,9 @@ begin
     update public.profiles set status='active' where id=person_id;
     actor_role := case when person_name='coordinator_a' then 'coordinator'
       when person_name like 'teacher%' then 'teacher' else 'student' end;
-    if actor_role<>'student' then
-      delete from public.user_roles ur using public.roles r
-      where ur.profile_id=person_id and r.id=ur.role_id and r.code='student';
-      insert into public.user_roles (profile_id,institution_id,role_id)
-      select person_id,case when person_name like '%_b' then unam else ipn end,id
-      from public.roles where code=actor_role;
-    end if;
+    insert into public.user_roles (profile_id,institution_id,role_id)
+    select person_id,case when person_name like '%_b' then unam else ipn end,id
+    from public.roles where code=actor_role;
   end loop;
   begin
     insert into public.programs (institution_id,campus_id,name,code)
@@ -335,13 +331,12 @@ select id,'qa18.'||name||'@example.test',
 from qa18_ids where name in ('legacy_teacher','legacy_student');
 update public.profiles set status='active'
 where id in (select id from qa18_ids where name in ('legacy_teacher','legacy_student'));
-delete from public.user_roles ur using public.roles r
-where ur.profile_id=(select id from qa18_ids where name='legacy_teacher')
-  and r.id=ur.role_id and r.code='student';
+-- Historical approved people have roles from approval, not from Auth signup.
 insert into public.user_roles (profile_id,institution_id,role_id)
-select (select id from qa18_ids where name='legacy_teacher'),
-  (select id from qa18_ids where name='ipn'),id
-from public.roles where code='teacher';
+select q.id,(select id from qa18_ids where name='ipn'),r.id
+from qa18_ids q join public.roles r on r.code=case
+  when q.name='legacy_teacher' then 'teacher' else 'student' end
+where q.name in ('legacy_teacher','legacy_student');
 insert into public.registration_requests
   (id,profile_id,institution_id,requested_role,program_id,status,decided_at)
 values

@@ -13,6 +13,32 @@ create temp table audit_results (test_name text primary key, passed boolean not 
 grant select on fixture_users, fixture_ids to authenticated;
 grant select, insert on audit_results to authenticated;
 
+-- Snapshot unrelated local data before inserting fixtures. Admin RPC counts must
+-- include the known fixture delta, not assume an otherwise empty institution.
+create temp table baseline_admin as
+select i.slug,
+  (select count(*) from public.profiles p where p.institution_id=i.id) user_count,
+  (select count(*) from public.profiles p where p.institution_id=i.id and p.status='pending') pending_count,
+  (select count(*) from public.profiles p where p.institution_id=i.id and p.status='active') active_count,
+  (select count(*) from public.profiles p where p.institution_id=i.id and p.status='inactive') inactive_count,
+  (select count(*) from public.user_roles ur join public.roles r on r.id=ur.role_id
+    where ur.institution_id=i.id and r.code='student') student_count,
+  (select count(*) from public.user_roles ur join public.roles r on r.id=ur.role_id
+    where ur.institution_id=i.id and r.code='teacher') teacher_count,
+  (select count(*) from public.user_roles ur join public.roles r on r.id=ur.role_id
+    where ur.institution_id=i.id and r.code='coordinator') coordinator_count,
+  (select count(*) from public.user_roles ur join public.roles r on r.id=ur.role_id
+    where ur.institution_id=i.id and r.code='hr') hr_count,
+  (select count(*) from public.user_roles ur join public.roles r on r.id=ur.role_id
+    where ur.institution_id=i.id and r.code='admin') admin_count,
+  (select count(*) from public.campuses c where c.institution_id=i.id) campus_count,
+  (select count(*) from public.programs p where p.institution_id=i.id) program_count,
+  (select count(*) from public.subjects s where s.institution_id=i.id) subject_count,
+  (select count(*) from public.groups g where g.institution_id=i.id) group_count,
+  (select count(*) from public.academic_periods ap where ap.institution_id=i.id) period_count
+from public.institutions i where i.slug in ('ipn','unam');
+grant select on baseline_admin to authenticated;
+
 insert into fixture_users (label,id,institution_id,full_name,email,identifier)
 select 'student_a_' || n::text, gen_random_uuid(), i.id,
   'Private Student A ' || n::text,
@@ -231,6 +257,11 @@ from fixture_users u join public.roles r on r.code = case
   else 'teacher' end
 where u.label in ('coordinator_a','coordinator_b','hr_a','hr_b',
   'admin_a','admin_b','coordinator_pending','teacher_excellent');
+-- Student roles are assigned explicitly in this fixture after approval.
+insert into public.user_roles (profile_id,role_id,institution_id)
+select u.id,r.id,u.institution_id from fixture_users u
+join public.roles r on r.code='student'
+where u.label like 'student_a_%' or u.label like 'student_b_%';
 insert into public.student_enrollments (institution_id,student_id,group_id,academic_period_id)
 select u.institution_id,u.id,g.id,ap.id from fixture_users u
 cross join lateral (select id from fixture_ids where label='group_a_current') g
@@ -452,24 +483,38 @@ select set_config('request.jwt.claim.sub',
   (select id::text from fixture_users where label='admin_a'),true);
 insert into audit_results values
  ('admin A sees own users only',
-   (select user_count from public.admin_institution_summary())=16),
+   (select s.user_count=b.user_count+16 from public.admin_institution_summary() s
+    cross join baseline_admin b where b.slug='ipn')),
  ('admin A status counts are real',
-   (select pending_count=2 and active_count=14 and inactive_count=0
-    from public.admin_institution_summary())),
+   (select s.pending_count=b.pending_count+2 and s.active_count=b.active_count+14
+      and s.inactive_count=b.inactive_count from public.admin_institution_summary() s
+    cross join baseline_admin b where b.slug='ipn')),
  ('admin A role counts are real',
-   (select student_count=6 and teacher_count=4 and coordinator_count=2
-      and hr_count=1 and admin_count=1 from public.admin_institution_summary())),
+   (select s.student_count=b.student_count+6 and s.teacher_count=b.teacher_count+4
+      and s.coordinator_count=b.coordinator_count+2 and s.hr_count=b.hr_count+1
+      and s.admin_count=b.admin_count+1 from public.admin_institution_summary() s
+    cross join baseline_admin b where b.slug='ipn')),
  ('admin A structure counts are real',
-   (select campus_count=4 and program_count=10 and subject_count=2
-      and group_count=3 and period_count=2 from public.admin_institution_summary())),
+   (select s.campus_count=b.campus_count+1 and s.program_count=b.program_count+1
+      and s.subject_count=b.subject_count+2 and s.group_count=b.group_count+3
+      and s.period_count=b.period_count+2 from public.admin_institution_summary() s
+    cross join baseline_admin b where b.slug='ipn')),
  ('admin A users exclude B emails',
    (select pg_catalog.count(*) from public.admin_institution_users()
     where institutional_email like '%teacher_b%')=0),
  ('admin A users include pending and no-role profiles',
-   (select pg_catalog.count(*) from public.admin_institution_users()
-    where status='pending'::public.user_status)=2
-   and (select pg_catalog.count(*) from public.admin_institution_users()
-    where pg_catalog.cardinality(role_codes)=0)=2),
+   exists (select 1 from public.admin_institution_users('teacher_pending')
+     where profile_id=(select id from fixture_users where label='teacher_pending')
+       and status='pending'::public.user_status)
+   and exists (select 1 from public.admin_institution_users('coordinator_pending')
+     where profile_id=(select id from fixture_users where label='coordinator_pending')
+       and status='pending'::public.user_status)
+   and exists (select 1 from public.admin_institution_users('teacher_no_role')
+     where profile_id=(select id from fixture_users where label='teacher_no_role')
+       and pg_catalog.cardinality(role_codes)=0)
+   and exists (select 1 from public.admin_institution_users('institution_no_role')
+     where profile_id=(select id from fixture_users where label='institution_no_role')
+       and pg_catalog.cardinality(role_codes)=0)),
  ('admin A search stays within institution',
    (select pg_catalog.count(*) from public.admin_institution_users('teacher_b'))=0),
  ('admin A overview contains one institution',
@@ -495,13 +540,21 @@ select set_config('request.jwt.claim.sub',
   (select id::text from fixture_users where label='admin_b'),true);
 insert into audit_results values
  ('admin B sees only B users',
-   (select user_count from public.admin_institution_summary())=9),
+   (select s.user_count=b.user_count+9 from public.admin_institution_summary() s
+    cross join baseline_admin b where b.slug='unam')),
  ('admin B cannot list A users',
    (select pg_catalog.count(*) from public.admin_institution_users()
     where institutional_email like '%admin_a%')=0),
  ('admin B sees only B structure',
-   (select campus_count=4 and program_count=10 and subject_count=1
-      and group_count=1 and period_count=1 from public.admin_institution_summary()));
+   (select s.campus_count=b.campus_count+1 and s.program_count=b.program_count+1
+      and s.subject_count=b.subject_count+1 and s.group_count=b.group_count+1
+      and s.period_count=b.period_count+1 from public.admin_institution_summary() s
+    cross join baseline_admin b where b.slug='unam')),
+ ('admin B role counts are real',
+   (select s.student_count=b.student_count+5 and s.teacher_count=b.teacher_count+1
+      and s.coordinator_count=b.coordinator_count+1 and s.hr_count=b.hr_count+1
+      and s.admin_count=b.admin_count+1 from public.admin_institution_summary() s
+    cross join baseline_admin b where b.slug='unam'));
 
 select set_config('request.jwt.claim.sub',
   (select id::text from fixture_users where label='student_a_1'),true);

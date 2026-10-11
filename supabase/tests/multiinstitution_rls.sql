@@ -95,6 +95,15 @@ begin
       '10000000-0000-4000-8000-000000000009'
     );
 
+  -- Auth signup no longer grants student: these active/pending fixtures receive
+  -- roles explicitly to exercise the original RLS contracts.
+  insert into public.user_roles (profile_id, role_id, institution_id)
+  select p.id,r.id,p.institution_id from public.profiles p
+  join public.roles r on r.code='student'
+  where p.id in ('10000000-0000-4000-8000-000000000001',
+    '10000000-0000-4000-8000-000000000002',
+    '10000000-0000-4000-8000-000000000008');
+
   insert into public.user_roles (profile_id, role_id, institution_id)
   select v.profile_id, r.id, p.institution_id
   from (values

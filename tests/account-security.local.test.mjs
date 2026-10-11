@@ -103,7 +103,7 @@ test('Auth local y Mailpit: confirmación, pending y recuperación real', async 
     const profile = await confirmedClient.from('profiles').select('status').eq('id', user.data.user.id).single()
     assert.equal(profile.data?.status, 'pending')
     const roles = await confirmedClient.from('user_roles').select('roles(code)').eq('profile_id', user.data.user.id)
-    assert.deepEqual(roles.data?.map((item) => item.roles.code), ['student'])
+    assert.deepEqual(roles.data?.map((item) => item.roles.code), [], 'Legacy signup grants no academic or privileged role')
   })
   await t.test('pending no recibe datos académicos', async () => {
     const result = await confirmedClient.rpc('my_student_evaluations')

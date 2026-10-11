@@ -1,6 +1,6 @@
 # Reproducción del DDL final
 
-La fuente única del DDL son las **ocho migraciones versionadas** en `supabase/migrations/`, aplicadas por orden de nombre, seguidas del catálogo en `supabase/seed.sql`. No se conserva una copia de `CREATE TABLE` en `docs/` porque duplicaría la fuente de verdad y podría omitir funciones, triggers, grants y RLS.
+La fuente única del DDL son las **13 migraciones versionadas** en `supabase/migrations/`, aplicadas por orden de nombre, seguidas del catálogo en `supabase/seed.sql`. No se conserva una copia de `CREATE TABLE` en `docs/` porque duplicaría la fuente de verdad y podría omitir funciones, triggers, grants y RLS.
 
 En un entorno **local y desechable** con Docker activo:
 

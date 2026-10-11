@@ -2,7 +2,7 @@
 
 ## 1. Portada / datos del proyecto
 
-**Proyecto:** EvalDoc, evaluación docente multiinstitucional. **Versión de entrega:** Bloque 14, rama `chore/final-school-delivery`. **Repositorio:** `BetoGuzmanBarrera/evaldoc`. **Prototipo aprobado:** `design/evaldoc-prototype-1.pen` y PDF adjunto. Institución académica, materia, integrantes, asesor y fecha de entrega formal: **no constan en el repositorio** y deben completarse por el equipo antes de presentar el informe.
+**Proyecto:** EvalDoc, evaluación docente multiinstitucional. **Versión de entrega:** cierre QA, rama `fix/final-qa`. **Repositorio:** `BetoGuzmanBarrera/evaldoc`. **Prototipo aprobado:** `design/evaldoc-prototype-1.pen` y PDF adjunto. Institución académica, materia, integrantes, asesor y fecha de entrega formal: **no constan en el repositorio** y deben completarse por el equipo antes de presentar el informe.
 
 ## 2. Resumen
 
@@ -26,7 +26,7 @@ Registrar perfiles y roles; comprobar elegibilidad académica; recibir 15 respue
 
 ## 7. Alcance
 
-Incluye interfaz React para alumno, docente, coordinación, RRHH y administrador; Supabase Auth/PostgreSQL/RLS; correo de confirmación y recuperación en ambiente local; Turnstile; PDF y documentación. No incluye gestión UI completa de la estructura académica, despliegue real, pagos, IA ni aplicación móvil.
+Incluye interfaz React para alumno, docente, coordinación, RRHH y administrador; Supabase Auth/PostgreSQL/RLS; correo de confirmación y recuperación en ambiente local; Turnstile; PDF y documentación. Incluye catálogo público de campus/carreras y gestión de materias, periodos, grupos, asignaciones e inscripciones por Coordinación. No incluye despliegue real, pagos, IA ni aplicación móvil.
 
 ## 8. Requerimientos funcionales
 
@@ -50,7 +50,7 @@ El diseño aprobado define azul `#2563EB`, navy `#17365D`, tipografía Inter, fo
 
 ## 13. Base de datos
 
-Ocho migraciones definen 18 tablas públicas y 17 políticas. La migración final incorpora instalaciones/talleres y su relación N:M con programas. El seed contiene siete instituciones de ejemplo, cinco roles y la plantilla oficial de 15 preguntas; no crea usuarios ni datos académicos ficticios. [Esquema](database-schema.md).
+Trece migraciones definen 20 tablas públicas y 21 políticas RLS. Tras las instalaciones/talleres se añadieron `registration_requests` y `registration_request_subjects`; la última migración elimina el autogrant heredado de `student` sin alterar tablas. El seed contiene siete instituciones, cinco roles y 15 reactivos oficiales; la migración de catálogo añade 21 campus y 63 carreras públicas activas. Ni el seed ni esa migración crean usuarios, materias o evaluaciones. [Esquema](database-schema.md).
 
 ## 14. DER
 
@@ -58,15 +58,15 @@ El [DER Mermaid](database-er-diagram.md) muestra identidad, estructura académic
 
 ## 15. Modelo físico
 
-UUID, FK compuestas, UNIQUE, CHECK, tres enums e índices soportan integridad. La separación de entidades sigue la intención de 3FN; `institution_id` y ciertos periodos se repiten físicamente para exigir pertenencia con FK compuestas, una desnormalización controlada que se declara expresamente en el [modelo físico](database-physical-model.md). El [diccionario](data-dictionary.md) enumera las 130 columnas.
+UUID, FK compuestas, UNIQUE, CHECK, cuatro enums e índices soportan integridad. La separación de entidades sigue la intención de 3FN; `institution_id` y ciertos periodos se repiten físicamente para exigir pertenencia con FK compuestas, una desnormalización controlada que se declara expresamente en el [modelo físico](database-physical-model.md). El [diccionario](data-dictionary.md) enumera las 146 columnas.
 
 ## 16. Seguridad
 
-La cuenta nueva solo recibe `student` y estado `pending`, sin elevación por metadata. Password fuerte, confirmación de correo y recuperación usan Supabase Auth. Las funciones elevadas inspeccionadas son propiedad de `postgres`, emplean `search_path = ''` y no conceden `EXECUTE` a `anon` ni `PUBLIC`; las RPC autorizadas a `authenticated` validan rol e institución internamente. [Autorización](rls-authorization.md).
+Toda alta pública crea un perfil `pending` sin roles; solo la aprobación institucional concede el rol solicitado permitido, sin elevación por metadata. Password fuerte, confirmación de correo y recuperación usan Supabase Auth. Las funciones elevadas inspeccionadas son propiedad de `postgres`, emplean `search_path = ''` y no conceden `EXECUTE` a `anon` ni `PUBLIC`; las RPC autorizadas a `authenticated` validan rol e institución internamente. [Autorización](rls-authorization.md).
 
 ## 17. RLS
 
-RLS está activa en las 18 tablas. Hay 17 políticas SELECT; ninguna concede lectura directa a evaluaciones/respuestas. Las dos políticas nuevas de instalaciones permiten lectura solo a coordinación/admin activos de la institución. No hay escrituras cliente directas para esas tablas.
+RLS está activa en las 20 tablas públicas. Hay 21 políticas; ninguna concede lectura directa a evaluaciones/respuestas. Las políticas de instalaciones y solicitudes mantienen el aislamiento institucional. No hay escrituras cliente directas para esas tablas.
 
 ## 18. Multiinstitución
 
@@ -82,7 +82,7 @@ La RPC verifica perfil activo, inscripción, docente/asignación, periodo y vent
 
 ## 21. Analíticas
 
-La plataforma presenta promedios, participación, dimensiones, preguntas, comparativos e históricos según permisos. Se calcula en escala 0–10 desde respuestas completas; las 15 preguntas tienen peso uniforme en el cálculo actual. No hay pesos configurables ni puntuaciones sobre cinco. [Fórmulas](institutional-analytics.md).
+La plataforma presenta promedios, participación, dimensiones, preguntas, comparativos e históricos según permisos. Se calcula en escala 0–10 desde respuestas completas; las 15 preguntas tienen peso uniforme en el cálculo actual. En el escenario Laura, el promedio general es **8.7/10** y la valoración favorable es **68/75 = 90.7%** de respuestas con 7.5 o 10: son métricas diferentes. La clasificación derivada es **Contratable** (8–10) y sirve de apoyo, no de decisión laboral automática. No hay pesos configurables ni puntuaciones sobre cinco. [Fórmulas](institutional-analytics.md).
 
 ## 22. Reportes PDF
 
@@ -102,11 +102,11 @@ Las suites SQL cubren RLS, evaluación, docente, institución, analíticas e ins
 
 ## 26. Resultados
 
-El esquema local reproduce las ocho migraciones y el seed; la interfaz se puede abrir en localhost. Las pruebas y conteos finales se documentan en [validación](final-validation.md), sin confundir el seed de ejemplo con resultados académicos reales. No se han medido adopción ni rendimiento en producción.
+El esquema local tiene las 13 migraciones aplicadas y el seed; la interfaz se puede abrir en localhost. Las pruebas y conteos finales se documentan en [validación](final-validation.md), sin confundir el seed de ejemplo con resultados académicos reales. No se han medido adopción ni rendimiento en producción.
 
 ## 27. Limitaciones
 
-No hay despliegue, usuarios institucionales reales ni flujo UI para cargar campus/programas/matrículas/talleres. Un grupo pequeño y comparaciones temporales pueden facilitar inferencias. El peso de los reactivos es uniforme. La generación PDF depende de memoria del navegador. Algunas entradas de navegación no implementadas están deshabilitadas.
+No hay despliegue ni usuarios institucionales reales. El catálogo público de campus/carreras se instala por migración; Coordinación administra materias, grupos, periodos, asignaciones e inscripciones, pero no existe CRUD UI de campus, carreras o talleres. Un grupo pequeño y comparaciones temporales pueden facilitar inferencias. El peso de los reactivos es uniforme. La generación PDF depende de memoria del navegador. Algunas entradas de navegación no implementadas están deshabilitadas.
 
 ## 28. Trabajo futuro
 

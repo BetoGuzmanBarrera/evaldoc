@@ -14,7 +14,7 @@ RRHH conserva las categorías derivadas del promedio docente redondeado a un dec
 
 ## Seguridad, rendimiento y límites
 
-Las seis RPC son `SECURITY DEFINER`, propiedad de `postgres`, con `search_path = ''` y autorización explícita al comienzo. Solo `authenticated` puede invocarlas; ninguna concede lectura directa de `evaluations`, `evaluation_answers` o `student_enrollments`. Sus respuestas no contienen identificadores, nombres, correos ni respuestas individuales de alumnos. En el esquema final, las 18 tablas mantienen RLS y existen 17 políticas de lectura.
+Las seis RPC son `SECURITY DEFINER`, propiedad de `postgres`, con `search_path = ''` y autorización explícita al comienzo. Solo `authenticated` puede invocarlas; ninguna concede lectura directa de `evaluations`, `evaluation_answers` o `student_enrollments`. Sus respuestas no contienen identificadores, nombres, correos ni respuestas individuales de alumnos. En el esquema actual, las 20 tablas públicas mantienen RLS y existen 21 políticas.
 
 No se crearon índices en el Bloque 10: las claves únicas y los índices existentes cubren las rutas de unión por asignación, evaluación, respuesta, periodo, grupo y catálogo. El cálculo recorre respuestas completas para los reactivos, por lo que conviene medir planes con volúmenes reales antes de optimizar. Los conteos de participación de grupos pequeños siguen visibles sin puntuación; consultas repetidas en distintos momentos pueden permitir inferencias por diferencias. Publicar instantáneas de cohortes cerradas reforzaría esta protección. El Bloque 11 reutiliza estas RPC para PDF; véase [pdf-reports.md](pdf-reports.md). Esta entrega no incluye Excel.
 

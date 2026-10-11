@@ -91,6 +91,12 @@ begin
   delete from public.user_roles
   where profile_id in (select id from audit_ids
     where label in ('teacher_a','teacher_b','coordinator_a'));
+  -- Legacy Auth fixtures now receive student roles explicitly after approval.
+  insert into public.user_roles (profile_id,role_id,institution_id)
+  select ids.id,r.id,p.institution_id from audit_ids ids
+  join public.profiles p on p.id=ids.id
+  join public.roles r on r.code='student'
+  where ids.label in ('student_a','uninscribed_a','pending_a','student_b');
   insert into public.user_roles (profile_id,role_id,institution_id)
   select ids.id,r.id,p.institution_id from audit_ids ids
   join public.profiles p on p.id=ids.id
