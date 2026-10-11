@@ -220,6 +220,16 @@ insert into audit_results values
  ('teacher A cannot see institution B assignment',
    (select count(*) from public.teacher_assignment_results(
      (select id from fixture_ids where label='assignment_b_current')))=0),
+ ('teacher A context contains its own campus and program',
+   (select campus_name='Block 8 Campus A' and program_name='Block 8 Program A'
+    from public.teacher_assignment_context(
+      (select id from fixture_ids where label='assignment_a_current')))),
+ ('teacher A cannot inspect colleague context',
+   (select count(*) from public.teacher_assignment_context(
+      (select id from fixture_ids where label='assignment_a_other')))=0),
+ ('teacher A cannot inspect institution B context',
+   (select count(*) from public.teacher_assignment_context(
+      (select id from fixture_ids where label='assignment_b_current')))=0),
  ('manipulated UUID returns no row',
    (select count(*) from public.teacher_assignment_results(
      'ffffffff-ffff-4fff-8fff-ffffffffffff'::uuid))=0),
@@ -355,6 +365,11 @@ begin
   begin perform public.teacher_results_history();
   exception when others then rejected := sqlerrm='teacher_access_denied'; end;
   insert into audit_results values ('student cannot invoke teacher results',rejected);
+  rejected := false;
+  begin perform public.teacher_assignment_context(
+    (select id from fixture_ids where label='assignment_a_current'));
+  exception when others then rejected := sqlerrm='teacher_access_denied'; end;
+  insert into audit_results values ('student cannot invoke teacher context',rejected);
 
   perform set_config('request.jwt.claim.sub',
     (select id::text from fixture_users where label='teacher_pending'),true);

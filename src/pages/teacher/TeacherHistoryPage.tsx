@@ -7,6 +7,7 @@ import { MetricCard } from '../../components/ui/MetricCard'
 import { PdfDownloadButton } from '../../components/ui/PdfDownloadButton'
 import { useAuth } from '../../hooks/useAuth'
 import { useTeacherOverview } from '../../hooks/useTeacherResults'
+import { classificationDisclaimer, classifyTeacherScore, teacherClassificationLabel } from '../../lib/teacherClassification'
 
 export function TeacherHistoryPage() {
   const { profile } = useAuth()
@@ -44,8 +45,9 @@ export function TeacherHistoryPage() {
             <section className="surface teacher-history-panel">
               <h2>Periodos académicos / 10</h2>
               <div className="teacher-history-scroll" role="region" aria-label="Tabla comparativa de periodos; desplazable horizontalmente" tabIndex={0}>
-                <table><caption className="sr-only">Resultados agregados por periodo en escala de 0 a 10</caption><thead><tr><th scope="col">Periodo</th><th scope="col">Promedio</th><th scope="col">Respuestas</th><th scope="col">Respuestas publicables</th></tr></thead><tbody>{history.map((period) => <tr key={period.id}><th scope="row">{period.name}</th><td>{period.averageScore === null ? 'Protegido' : period.averageScore.toFixed(1) + ' / 10'}</td><td>{period.responseCount}</td><td>{period.publishedResponses}</td></tr>)}</tbody></table>
+                <table><caption className="sr-only">Resultados agregados por periodo en escala de 0 a 10</caption><thead><tr><th scope="col">Periodo</th><th scope="col">Promedio</th><th scope="col">Respuestas</th><th scope="col">Respuestas publicables</th><th scope="col">Clasificación</th></tr></thead><tbody>{history.map((period) => <tr key={period.id}><th scope="row">{period.name}</th><td>{period.averageScore === null ? 'Protegido' : period.averageScore.toFixed(1) + ' / 10'}</td><td>{period.responseCount}</td><td>{period.publishedResponses}</td><td>{teacherClassificationLabel(classifyTeacherScore(period.averageScore, period.publishedResponses))}</td></tr>)}</tbody></table>
               </div>
+              <p className="teacher-classification-note">{classificationDisclaimer}</p>
             </section>
           </>}
       <TeacherPrivacyNotice />

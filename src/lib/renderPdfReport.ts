@@ -102,9 +102,11 @@ export async function renderPdfReport(report: PdfReport): Promise<Blob> {
       return
     }
     const n = section.columns.length
-    const widths = n === 6 ? [22, 54, 25, 25, 25, 25]
+    const widths = n === 6 && section.columns[0] === 'Periodo' ? [43, 27, 29, 26, 20, 31]
+      : n === 6 ? [22, 54, 25, 25, 25, 25]
       : n === 5 && section.columns[0] === 'Nombre' ? [72, 26, 26, 26, 26]
         : n === 5 ? [48, 29, 37, 30, 32]
+          : n === 4 && section.columns[0] === 'Docente' ? [66, 33, 31, 46]
           : n === 4 && section.columns[0] === 'Ámbito' ? [25, 81, 35, 35]
             : n === 4 && section.columns[0] === '#' ? [12, 94, 35, 35]
               : n === 4 ? [95, 27, 27, 27]
@@ -165,14 +167,17 @@ export async function renderPdfReport(report: PdfReport): Promise<Blob> {
   }
 
   for (const section of report.sections) {
-    nextPage(22, section.title)
+    nextPage(22)
     pdf.setFont('helvetica', 'bold')
     pdf.setFontSize(12)
     pdf.setTextColor(...navy)
     y = text(pdf, section.title, left, y + 2, usable, 12, navy) + 4
     renderTable(section)
     if (section.bars?.length) renderBars(section)
-    if (section.note && section.rows.length) y = text(pdf, section.note, left, y, usable, 8, muted) + 2
+    if (section.note && section.rows.length) {
+      nextPage(16, section.title)
+      y = text(pdf, section.note, left, y, usable, 8, muted) + 2
+    }
     y += 5
   }
 

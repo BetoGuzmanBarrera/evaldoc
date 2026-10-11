@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from './useAuth'
 import {
   loadTeacherAssignments,
+  loadTeacherAssignmentContext,
   loadTeacherHistory,
   loadTeacherPeriodBreakdown,
   type TeacherAssignmentResult,
@@ -76,9 +77,11 @@ export function useTeacherAssignment(assignmentId: string | null) {
   useEffect(() => {
     if (!assignmentId) return
     let active = true
-    loadTeacherAssignments(assignmentId).then((rows) => {
+    loadTeacherAssignments(assignmentId).then(async (rows) => rows[0]
+      ? { ...rows[0], ...await loadTeacherAssignmentContext(assignmentId) }
+      : null).then((assignment) => {
       if (!active) return
-      setResult(rows[0] ?? null)
+      setResult(assignment)
       setError(false)
       setLoading(false)
       setLoadedFor(requestKey)

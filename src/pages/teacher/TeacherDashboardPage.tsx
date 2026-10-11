@@ -4,6 +4,7 @@ import { ResponseChart } from '../../components/charts/ResponseChart'
 import { TrendChart } from '../../components/charts/TrendChart'
 import { TeacherLayout } from '../../components/layout/TeacherLayout'
 import { TeacherPrivacyNotice } from '../../components/teacher/TeacherPrivacyNotice'
+import { TeacherClassificationCard } from '../../components/teacher/TeacherClassificationCard'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { LoadingSkeleton } from '../../components/ui/LoadingSkeleton'
 import { MetricCard } from '../../components/ui/MetricCard'
@@ -50,6 +51,7 @@ export function TeacherDashboardPage() {
               <MetricCard label="Asignaciones evaluadas" value={evaluated} caption="Con evaluaciones recibidas" />
               <MetricCard label="Resultados publicables" value={published} caption="Mínimo 5 respuestas por asignación" />
             </div>
+            <TeacherClassificationCard average={current?.averageScore ?? null} responseCount={current?.publishedResponses ?? 0} />
             <div className="teacher-chart-grid">
               {trend.length ? <TrendChart title="Evolución de calificación / 10" points={trend} />
                 : <EmptyState title="Sin tendencia publicable" message="Los promedios aparecerán al reunir cinco respuestas completas por asignación." />}

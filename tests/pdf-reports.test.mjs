@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { inflateSync } from 'node:zlib'
 import { executiveReport, historyReport, participationReport, progressReport, safePdfFilename, teacherReport } from '../src/lib/pdfReportModel.ts'
 import { renderPdfReport } from '../src/lib/renderPdfReport.ts'
 
@@ -8,6 +9,14 @@ const total = { scope: 'total', id: null, label: 'Total', expected: 20, complete
 const campus = { scope: 'campus', id: 'internal-id', label: 'Norte', expected: 20, completed: 10, pending: 10, participation: 50, students: 10 }
 const teacher = { id: 'internal-assignment-id', periodId: 'period-id', periodName: '2026-1', periodStartsAt: '2026-01-01', subjectName: 'Matemáticas Aplicadas', groupCode: 'A-1', responseCount: 5, averageScore: 9.2, favorablePercent: 80, published: true,
   questions: Array.from({ length: 15 }, (_, index) => ({ id: `question-${index}`, position: index + 1, label: `Reactivo ${index + 1}`, score: 8.5 })) }
+
+async function renderedPdfText(report) {
+  const raw = Buffer.from(await (await renderPdfReport(report)).arrayBuffer()).toString('latin1')
+  const streams = [...raw.matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)].flatMap((match) => {
+    try { return [inflateSync(Buffer.from(match[1], 'latin1')).toString('latin1')] } catch { return [] }
+  })
+  return { pages: (raw.match(/\/Type \/Page\b/g) ?? []).length, text: streams.join('\n') }
+}
 
 test('avance conserva los filtros y los totales agregados', () => {
   const report = progressReport(base, [total, campus])
@@ -27,7 +36,8 @@ test('reporte docente publicable contiene los quince promedios agregados', () =>
   const report = teacherReport(base, 'Dra. Sofía Pérez', teacher, [])
   assert.equal(report.sections[0].rows.length, 15)
   assert.equal(report.metrics[1].value, '9.2 / 10')
-  assert.equal(report.metrics[2].value, '80.0%')
+  assert.equal(report.metrics[2].value, 'Contratable')
+  assert.equal(report.metrics[3].value, '80.0%')
 })
 
 test('umbral inferior oculta puntuaciones y reactivos', () => {
@@ -41,6 +51,13 @@ test('las versiones mixtas no inventan reactivos', () => {
   const report = teacherReport(base, 'Docente', { ...teacher, questions: [] }, [])
   assert.equal(report.sections[0].rows.length, 0)
   assert.match(report.sections[0].note, /versiones/)
+})
+
+test('fortaleza y área de oportunidad solo se derivan de los quince promedios publicados', () => {
+  const questions = teacher.questions.map((item, index) => ({ ...item, score: index === 0 ? 9.6 : index === 9 ? 7.6 : 8.7 }))
+  const report = teacherReport(base, 'Docente', { ...teacher, questions }, [])
+  assert.match(report.sections[0].note, /Fortaleza: Reactivo 1/)
+  assert.match(report.sections[0].note, /Área de oportunidad: Reactivo 10/)
 })
 
 test('identificadores y correos de alumnos nunca entran en el modelo', () => {
@@ -126,7 +143,73 @@ test('reporte institucional ignora propiedades estudiantiles adicionales', () =>
 test('el resumen ejecutivo contiene solo asignaciones publicables suministradas', () => {
   const report = executiveReport(base, { overview: { averageScore: 8, responseCount: 5, teacherCount: 1, expected: 5, completed: 5, pending: 0, participation: 100 }, trend: [], ranking: [{ id: 'internal-teacher-id', name: 'Dr. Ejemplo', averageScore: 8, responseCount: 5, assignmentCount: 1 }] })
   assert.equal(report.sections.find((section) => section.title === 'Docentes publicables').rows[0][0], 'Dr. Ejemplo')
+  assert.equal(report.sections.find((section) => section.title === 'Docentes publicables').rows[0][3], 'Contratable')
+  assert.match(report.sections.find((section) => section.title === 'Nota institucional').note, /no determina automáticamente/)
   assert.ok(!JSON.stringify(report).includes('internal-teacher-id'))
+})
+
+test('ámbitos académicos del informe se presentan en español sin alterar sus códigos', () => {
+  const breakdown = ['campus', 'program', 'group'].map((scope) => ({ scope, id: scope, label: scope, averageScore: 8.7, responseCount: 5, teacherCount: 1, assignmentCount: 1 }))
+  const report = executiveReport(base, { overview: { averageScore: 8.7, responseCount: 5, teacherCount: 1, expected: 5, completed: 5, pending: 0, participation: 100 }, trend: [], breakdown })
+  assert.deepEqual(breakdown.map((item) => item.scope), ['campus', 'program', 'group'])
+  assert.deepEqual(report.sections.find((item) => item.title === 'Campus, programas y grupos publicables').rows.map((row) => row[0]), ['Campus', 'Programa', 'Grupo'])
+})
+
+test('un encabezado de sección que inicia página no se etiqueta como continuación', async () => {
+  const report = { kind: 'Institucional', title: 'Informe institucional ejecutivo', ...base, metrics: [], sections: [
+    { title: 'Sección previa', columns: ['Dato'], rows: Array.from({ length: 14 }, (_, index) => [`Fila ${index}`]) },
+    { title: 'Docentes publicables', columns: ['Docente', 'Promedio', 'Respuestas', 'Clasificación'], rows: [['Profesora Laura Demo', '8.7 / 10', '5', 'Contratable']] },
+  ] }
+  const rendered = await renderedPdfText(report)
+  assert.equal(rendered.pages, 2)
+  assert.equal((rendered.text.match(/\(Docentes publicables\) Tj/g) ?? []).length, 1)
+  assert.ok(!rendered.text.includes('Docentes publicables \\(continuaci'))
+})
+
+test('una tabla que sí continúa en otra página conserva su encabezado de continuación', async () => {
+  const report = { kind: 'Institucional', title: 'Informe institucional ejecutivo', ...base, metrics: [], sections: [
+    { title: 'Docentes publicables', columns: ['Docente', 'Promedio', 'Respuestas', 'Clasificación'], rows: Array.from({ length: 40 }, (_, index) => [`Docente ${index}`, '8.7 / 10', '5', 'Contratable']) },
+  ] }
+  const rendered = await renderedPdfText(report)
+  assert.ok(rendered.pages > 1)
+  assert.ok(rendered.text.includes('Docentes publicables \\(continuaci'))
+})
+
+test('Laura 8.7 con cinco evaluaciones es Contratable en el PDF docente y ejecutivo filtrado', () => {
+  const laura = { ...teacher, responseCount: 5, averageScore: 8.7, campusName: 'México Campus Norte', programName: 'Ingeniería de Software QA' }
+  const own = teacherReport(base, 'Profesora Laura Demo', laura, [])
+  assert.equal(own.metrics.find((item) => item.label === 'Clasificación institucional').value, 'Contratable')
+  assert.ok(own.filters.includes('Campus: México Campus Norte'))
+  assert.ok(own.filters.includes('Programa: Ingeniería de Software QA'))
+  assert.equal(own.sections[0].rows.length, 15)
+  assert.match(own.sections.find((item) => item.title === 'Nota institucional').note, /no determina automáticamente/)
+  const institutional = executiveReport(base, { overview: { averageScore: 8.7, responseCount: 5, teacherCount: 1, expected: 5, completed: 5, pending: 0, participation: 100 }, trend: [], ranking: [{ id: 'private-id', name: 'Profesora Laura Demo', averageScore: 8.7, responseCount: 5, assignmentCount: 1 }] })
+  assert.deepEqual(institutional.filters, base.filters)
+  assert.equal(institutional.sections.find((item) => item.title === 'Docentes publicables').rows[0][3], 'Contratable')
+})
+
+test('Ricardo sin resultados y un grupo de cuatro nunca reciben categoría laboral', () => {
+  for (const responseCount of [0, 4]) {
+    const report = teacherReport(base, 'Ricardo QA', { ...teacher, responseCount, averageScore: null, published: false, questions: [] }, [])
+    assert.equal(report.metrics.find((item) => item.label === 'Clasificación institucional').value, 'Resultado protegido')
+    assert.equal(report.sections[0].rows.length, 0)
+  }
+})
+
+test('un promedio inválido publicable no se confunde con privacidad protegida', () => {
+  const report = teacherReport(base, 'Docente', { ...teacher, averageScore: null, responseCount: 5, published: true }, [])
+  assert.equal(report.metrics[1].value, 'No disponible')
+  assert.equal(report.metrics[2].value, 'Clasificación no disponible')
+  assert.equal(report.sections[0].rows.length, 0)
+})
+
+test('histórico docente muestra clasificación por periodo, pero el institucional no', () => {
+  const periods = [{ name: 'Anterior', startsAt: '2026-01-01', averageScore: null, responseCount: 0 }, { name: 'Actual', startsAt: '2026-08-01', averageScore: 8.7, responseCount: 5 }]
+  const own = historyReport(base, periods, true)
+  assert.equal(own.sections[0].rows[0][5], 'Resultado protegido')
+  assert.equal(own.sections[0].rows[1][5], 'Contratable')
+  assert.match(own.sections[1].note, /indicador de apoyo/)
+  assert.equal(historyReport(base, periods).sections[0].rows[1].length, 5)
 })
 
 test('porcentaje histórico no se calcula si el anterior es cero', () => {
