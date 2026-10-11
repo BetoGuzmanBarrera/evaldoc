@@ -1,6 +1,6 @@
 # DER lógico de EvalDoc
 
-El diagrama representa las 18 tablas públicas del esquema final. `auth.users` es una entidad gestionada por Supabase Auth; `profiles.id` la referencia 1:1. Las relaciones con `institution_id` se implementan con claves compuestas donde se requiere aislamiento. Una plantilla global tiene `institution_id` nulo.
+El diagrama representa las 20 tablas públicas del esquema actual. `auth.users` es una entidad gestionada por Supabase Auth; `profiles.id` la referencia 1:1. Las relaciones con `institution_id` se implementan con claves compuestas donde se requiere aislamiento. Una plantilla global tiene `institution_id` nulo.
 
 ```mermaid
 erDiagram
@@ -12,6 +12,12 @@ erDiagram
   institutions ||--o{ survey_templates : configura
   profiles ||--o{ user_roles : recibe
   roles ||--o{ user_roles : clasifica
+  profiles ||--o| registration_requests : solicita
+  institutions ||--o{ registration_requests : valida
+  campuses |o--o{ registration_requests : solicitada
+  programs |o--o{ registration_requests : solicitada
+  registration_requests ||--o{ registration_request_subjects : incluye
+  subjects ||--o{ registration_request_subjects : solicitada
   campuses |o--o{ programs : ubica
   campuses |o--o{ facilities : ubica
   programs ||--o{ subjects : agrupa
@@ -37,6 +43,8 @@ erDiagram
   profiles { uuid id PK uuid institution_id FK text status }
   roles { uuid id PK text code UK }
   user_roles { uuid id PK uuid profile_id FK uuid role_id FK uuid institution_id FK }
+  registration_requests { uuid id PK uuid profile_id FK uuid institution_id FK text requested_role uuid campus_id FK uuid program_id FK registration_request_status status }
+  registration_request_subjects { uuid request_id PK,FK uuid institution_id FK uuid subject_id PK,FK }
   academic_periods { uuid id PK uuid institution_id FK timestamptz starts_at timestamptz ends_at }
   programs { uuid id PK uuid institution_id FK uuid campus_id FK }
   facilities { uuid id PK uuid institution_id FK uuid campus_id FK text facility_type }

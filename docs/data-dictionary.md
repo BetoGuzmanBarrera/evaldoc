@@ -1,6 +1,6 @@
 # Diccionario de datos de EvalDoc
 
-Fuente: catálogo PostgreSQL local tras las ocho migraciones de supabase/migrations/. La restricción indica los nombres reales de PK, FK, UNIQUE o CHECK donde la columna participa. Para reglas entre varias columnas y políticas RLS, véase database-physical-model.md y las migraciones. auth.users pertenece a Supabase Auth.
+Fuente: catálogo PostgreSQL local tras las 13 migraciones de supabase/migrations/. La restricción indica los nombres reales de PK, FK, UNIQUE o CHECK donde la columna participa. Para reglas entre varias columnas y políticas RLS, véase database-physical-model.md y las migraciones. auth.users pertenece a Supabase Auth.
 
 ## academic_periods
 
@@ -160,8 +160,38 @@ Carreras o programas por sede
 | name | text | No |  | CHECK:programs_name_check | Nombre visible |
 | code | text | No |  | CHECK:programs_code_check, UNIQUE:programs_institution_id_code_key | Código de catálogo |
 | active | boolean | No |  | DEFAULT true | Indicador de vigencia |
+| catalog_visible | boolean | No |  | DEFAULT true | Distingue carreras públicas activas del programa QA histórico oculto |
 | created_at | timestamp with time zone | No |  | DEFAULT now() | Fecha de creación |
 | updated_at | timestamp with time zone | No |  | DEFAULT now() | Última actualización |
+
+## registration_request_subjects
+
+Materias solicitadas durante el onboarding; son evidencia, no autorización permanente para inscripciones o asignaciones.
+
+| Campo | Tipo SQL | Nullable | PK/FK | Restricción/default | Descripción |
+| --- | --- | --- | --- | --- | --- |
+| request_id | uuid | No | PK, FK | PK compuesta; FK a `registration_requests(institution_id,id)` con `ON DELETE CASCADE` | Solicitud original |
+| institution_id | uuid | No | FK | FK institucional a solicitud y materia | Institución propietaria |
+| subject_id | uuid | No | PK, FK | PK compuesta; FK a `subjects(institution_id,id)` | Materia solicitada |
+| created_at | timestamp with time zone | No |  | DEFAULT now() | Fecha de solicitud |
+
+## registration_requests
+
+Solicitud de alta académica pendiente de aprobación institucional. La aprobación concede el rol solicitado, pero no crea membresía académica.
+
+| Campo | Tipo SQL | Nullable | PK/FK | Restricción/default | Descripción |
+| --- | --- | --- | --- | --- | --- |
+| id | uuid | No | PK | DEFAULT gen_random_uuid(); UNIQUE `(institution_id,id)` | Identificador de solicitud |
+| profile_id | uuid | No | FK | UNIQUE `(profile_id)`; FK compuesta al perfil con `ON DELETE CASCADE` | Solicitante |
+| institution_id | uuid | No | FK | FK compuesta al perfil, programa y campus | Institución propietaria |
+| requested_role | text | No |  | CHECK: `student`, `teacher` o `coordinator` | Rol solicitado, aún no concedido |
+| program_id | uuid | Sí | FK | FK institucional; obligatorio para student y nulo para teacher/coordinator | Carrera solicitada |
+| status | registration_request_status | No |  | DEFAULT `pending`; CHECK de decisión/fecha | Estado de la solicitud |
+| decided_by | uuid | Sí | FK | FK a `auth.users` con `ON DELETE SET NULL` | Autoridad que decidió |
+| decided_at | timestamp with time zone | Sí |  | CHECK de decisión/fecha | Momento de decisión |
+| created_at | timestamp with time zone | No |  | DEFAULT now() | Fecha de creación |
+| updated_at | timestamp with time zone | No |  | DEFAULT now() | Última actualización |
+| campus_id | uuid | Sí | FK | FK institucional y compuesta con programa | Sede solicitada |
 
 ## roles
 

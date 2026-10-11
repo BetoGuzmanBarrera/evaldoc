@@ -1,10 +1,10 @@
 # Modelo físico PostgreSQL / Supabase
 
-El DDL versionado consta de ocho migraciones. El esquema público final tiene 18 tablas, 130 columnas, tres enums (`evaluation_status`, `question_type`, `user_status`) y 17 políticas SELECT. RLS está habilitada en las 18 tablas. El [DER](database-er-diagram.md), [diccionario](data-dictionary.md) y [reproducción DDL](ddl-reproduction.md) complementan este resumen.
+El DDL versionado consta de 13 migraciones. El esquema público final tiene 20 tablas, 146 columnas, cuatro enums (`evaluation_status`, `question_type`, `registration_request_status`, `user_status`) y 21 políticas RLS. RLS está habilitada en las 20 tablas. El [DER](database-er-diagram.md), [diccionario](data-dictionary.md) y [reproducción DDL](ddl-reproduction.md) complementan este resumen.
 
 | Área | Tablas | Llaves y relaciones principales |
 | --- | --- | --- |
-| Tenencia e identidad | `institutions`, `campuses`, `profiles`, `roles`, `user_roles` | UUID como PK; `profiles.id → auth.users.id ON DELETE CASCADE`; perfiles y roles pertenecen a una institución; UNIQUE de rol por perfil/institución. |
+| Tenencia e identidad | `institutions`, `campuses`, `profiles`, `roles`, `user_roles`, `registration_requests`, `registration_request_subjects` | UUID como PK; `profiles.id → auth.users.id ON DELETE CASCADE`; perfiles y roles pertenecen a una institución; UNIQUE de rol por perfil/institución. |
 | Estructura académica | `academic_periods`, `programs`, `subjects`, `groups`, `teaching_assignments`, `student_enrollments` | FK compuestas `(institution_id, id)` y `(institution_id, id, academic_period_id)` impiden mezclar instituciones/periodos. UNIQUE de docente/grupo/periodo y alumno/grupo/periodo. |
 | Instalaciones | `facilities`, `program_facilities` | FK de instalación a institución y campus; PK de unión `(program_id, facility_id)`; triggers verifican misma institución y campus compatible incluso al mover entidades. |
 | Encuesta | `survey_templates`, `survey_questions`, `evaluation_windows` | Plantilla versionada, pregunta única por posición, ventana vinculada a periodo y plantilla. Triggers protegen plantillas ya usadas. |
@@ -16,7 +16,7 @@ El DDL versionado consta de ocho migraciones. El esquema público final tiene 18
 - RF03: `evaluations_student_assignment_period_key` y trigger `evaluations_prevent_duplicate_obligation` comparan alumno, docente, materia y periodo incluso entre grupos o ventanas. La inserción de evaluación y respuestas se efectúa en una transacción.
 - Instalaciones: índices únicos parciales por `(institution_id, campus_id, lower(name))` o `(institution_id, lower(name))` cuando el campus es nulo; evitan nombres duplicados por alcance. `program_facilities_facility_id_idx` cubre consultas inversas de su FK sin duplicar la PK.
 - Índices de búsqueda previos: `(institution_id, id)` para FK compuestas, `(institution_id, code)` en campus/programas/materias, índices sobre `academic_period_id`, `group_id`, `teacher_id`, `question_id` y `survey_template_id` donde corresponde. Los índices creados por PK/UNIQUE son implícitos; no se crearon copias explícitas en el Bloque 14.
-- `facilities.facility_type` es texto normalizado con CHECK, no un enum de negocio cerrado; los tres enums reales son los citados arriba.
+- `facilities.facility_type` es texto normalizado con CHECK, no un enum de negocio cerrado; los cuatro enums reales son los citados arriba.
 
 ## Normalización y alcance
 

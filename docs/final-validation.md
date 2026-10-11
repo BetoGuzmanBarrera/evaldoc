@@ -1,5 +1,22 @@
 # Validación final local — Bloque 14
 
+> **Actualización PR #20 (10 de octubre de 2026):** el contenido que sigue documenta la
+> validación histórica del Bloque 14 y su `db reset` de entonces; no describe el estado
+> actual ni se ejecutó un reset para este PR. La base local actual tiene 13 migraciones
+> aplicadas, 20 tablas públicas con RLS, 21 políticas, 7 instituciones activas,
+> 21 campus activos, 63 carreras públicas activas, 5 roles y 12 usuarios Auth.
+> Laura conserva 5 evaluaciones, 75 respuestas y promedio de 8.7/10
+> (Contratable); su valoración favorable es 68/75 = 90.7 %.
+> La regresión de este PR pasó 103/103 pruebas Node, 10/10 suites SQL, lint y build.
+> Se revisaron las rutas autenticadas de Alumno, Docente, Coordinación y Admin a
+> 375, 768 y 1440 px, sin desbordamiento horizontal de página ni errores de consola.
+> Alfredo Lopez y Jose Torres eran dos cuentas QA históricas de Iberoamericana con
+> perfil `pending`, rol `student` heredado y sin solicitud ni relación académica.
+> Se conservaron sus usuarios y perfiles y se retiraron únicamente sus dos filas
+> `user_roles.student` en Supabase local. La comprobación global posterior encontró
+> **0 perfiles `pending` con cualquier rol**. La migración nueva impide que futuras
+> altas sin `requested_role` vuelvan a recibir ese rol.
+
 **Alcance:** rama `chore/final-school-delivery`, proyecto Supabase local `evaldoc` (Auth 55421), Vite `http://localhost:5173/`. No se consultó ni modificó Supabase remoto; no se hizo commit, push ni PR. El precheck inicial encontró working tree limpio, origin `BetoGuzmanBarrera/evaldoc`, PR #13 integrado y siete migraciones previas. Esta entrega añade la octava migración.
 
 ## Pruebas ejecutadas

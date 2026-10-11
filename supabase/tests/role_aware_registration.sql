@@ -110,13 +110,17 @@ begin
     values (legacy_a,'qa16.legacy@example.test',
       base || pg_catalog.jsonb_build_object(
         'institutional_identifier','QA16-LEGACY','role','admin'),now());
-  insert into qa_results values ('legacy account still pending student', exists (
+  insert into qa_results values ('legacy signup has pending profile and no role', exists (
     select 1 from public.profiles p
-    join public.user_roles ur on ur.profile_id=p.id
-    join public.roles role on role.id=ur.role_id
-    where p.id=legacy_a and p.status='pending' and role.code='student'
+    where p.id=legacy_a and p.status='pending'
+  ) and not exists (
+    select 1 from public.user_roles where profile_id=legacy_a
   ) and not exists (
     select 1 from public.registration_requests where profile_id=legacy_a
+  ) and not exists (
+    select 1 from public.student_enrollments where student_id=legacy_a
+  ) and not exists (
+    select 1 from public.teaching_assignments where teacher_id=legacy_a
   ));
 
   foreach role_code in array array['admin','hr'] loop
