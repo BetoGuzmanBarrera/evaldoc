@@ -269,7 +269,7 @@ select set_config('request.jwt.claim.sub',
   (select id::text from fixture_users where label='coordinator_a'),true);
 insert into audit_results values
  ('coordinator A sees own institution filter catalog',
-   (select count(*) from public.institutional_filter_options() where scope='campus')=1),
+   (select count(*) from public.institutional_filter_options() where scope='campus')=4),
  ('coordinator A cannot enumerate B filters',
    (select count(*) from public.institutional_filter_options()
     where id in (select id from fixture_ids where label in ('campus_b','program_b','group_b_current','period_b_current')))=0),
@@ -460,7 +460,7 @@ insert into audit_results values
    (select student_count=6 and teacher_count=4 and coordinator_count=2
       and hr_count=1 and admin_count=1 from public.admin_institution_summary())),
  ('admin A structure counts are real',
-   (select campus_count=1 and program_count=1 and subject_count=2
+   (select campus_count=4 and program_count=10 and subject_count=2
       and group_count=3 and period_count=2 from public.admin_institution_summary())),
  ('admin A users exclude B emails',
    (select pg_catalog.count(*) from public.admin_institution_users()
@@ -500,7 +500,7 @@ insert into audit_results values
    (select pg_catalog.count(*) from public.admin_institution_users()
     where institutional_email like '%admin_a%')=0),
  ('admin B sees only B structure',
-   (select campus_count=1 and program_count=1 and subject_count=1
+   (select campus_count=4 and program_count=10 and subject_count=1
       and group_count=1 and period_count=1 from public.admin_institution_summary()));
 
 select set_config('request.jwt.claim.sub',
@@ -590,11 +590,10 @@ select pg_catalog.count(*) as tests,
   pg_catalog.count(*) filter (where passed) as passed,
   pg_catalog.count(*) filter (where not passed) as failed
 from audit_results;
+select test_name,passed from audit_results where not passed;
 do $assert$ begin
   if exists (select 1 from audit_results where not passed) then
     raise exception 'institutional_dashboard_tests_failed';
   end if;
 end $assert$;
 rollback;
-
-

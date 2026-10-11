@@ -7,6 +7,7 @@ export interface PendingRegistrationRequest {
   email: string
   institution: string
   requestedRole: RequestedRole
+  campus: string | null
   program: string | null
   subjects: string[]
   status: 'pending'
@@ -32,6 +33,7 @@ export async function loadPendingRegistrationRequests(): Promise<PendingRegistra
     email: row.institutional_email as string,
     institution: row.institution_name as string,
     requestedRole: row.requested_role as RequestedRole,
+    campus: row.campus_name as string | null,
     program: row.program_name as string | null,
     subjects: row.subject_names as string[],
     status: row.status as 'pending',

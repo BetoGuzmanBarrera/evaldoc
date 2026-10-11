@@ -373,8 +373,8 @@ select set_config('request.jwt.claim.sub',
   (select id::text from audit_ids where label = 'coordinator_a'), true);
 insert into audit_results values
   ('coordinator A sees own structure',
-    (select count(*) from public.campuses) = 1
-    and (select count(*) from public.programs) = 1
+    (select count(*) from public.campuses) = 4
+    and (select count(*) from public.programs) = 10
     and (select count(*) from public.groups) = 1),
   ('coordinator A cannot see B structure',
     (select count(*) from public.campuses
@@ -395,7 +395,7 @@ select set_config('request.jwt.claim.sub',
   (select id::text from audit_ids where label = 'admin_a'), true);
 insert into audit_results values
   ('admin A sees own structure',
-    (select count(*) from public.campuses) = 1
+    (select count(*) from public.campuses) = 4
     and (select count(*) from public.groups) = 1),
   ('admin A cannot see B institution',
     (select count(*) from public.institutions where slug = 'unam') = 0),

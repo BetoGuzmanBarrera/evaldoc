@@ -8,8 +8,8 @@ import { TurnstileWidget, type TurnstileWidgetHandle } from '../../components/se
 import { Brand } from '../../components/ui/Brand'
 import { PasswordField } from '../../components/ui/PasswordField'
 import { useAuth } from '../../hooks/useAuth'
-import { loadRegistrationCatalog, type RegistrationProgram, type RegistrationSubject } from '../../lib/registrationCatalog'
-import { availableSubjects, registrationCatalogEmptyMessage, registrationLabels, registrationMetadata, validAcademicSelection, type RequestedRole } from '../../lib/registrationForm'
+import { loadRegistrationCatalog, type RegistrationCampus, type RegistrationProgram, type RegistrationSubject } from '../../lib/registrationCatalog'
+import { availablePrograms, availableSubjects, registrationCatalogEmptyMessage, registrationLabels, registrationMetadata, validAcademicSelection, type RequestedRole } from '../../lib/registrationForm'
 import { getRegistrationInstitutions, type RegistrationInstitution } from '../../lib/registrationInstitutions'
 import { supabase } from '../../lib/supabase'
 
@@ -18,11 +18,13 @@ export function RegisterPage() {
   const { session, profile, roles, loading } = useAuth()
   const [role, setRole] = useState<RequestedRole>('student')
   const [institutionId, setInstitutionId] = useState('')
+  const [campusId, setCampusId] = useState('')
   const [programId, setProgramId] = useState('')
   const [subjectIds, setSubjectIds] = useState<string[]>([])
   const [institutions, setInstitutions] = useState<RegistrationInstitution[]>([])
   const [institutionsLoading, setInstitutionsLoading] = useState(true)
   const [institutionsError, setInstitutionsError] = useState('')
+  const [campuses, setCampuses] = useState<RegistrationCampus[]>([])
   const [programs, setPrograms] = useState<RegistrationProgram[]>([])
   const [subjects, setSubjects] = useState<RegistrationSubject[]>([])
   const [catalogLoading, setCatalogLoading] = useState(false)
@@ -38,15 +40,18 @@ export function RegisterPage() {
   const mismatch = confirmation.length > 0 && !passwordsMatch(password, confirmation)
   const passwordReady = meetsPasswordPolicy(password) && passwordsMatch(password, confirmation)
   const labels = registrationLabels(role)
-  const visibleSubjects = availableSubjects(subjects, role, programId)
-  const catalogEmptyMessage = registrationCatalogEmptyMessage(role, programs, subjects)
+  const visiblePrograms = availablePrograms(programs, campusId)
+  const visibleSubjects = availableSubjects(subjects, programs, role, campusId, programId)
+  const catalogEmptyMessage = registrationCatalogEmptyMessage(role, campuses, programs, subjects, campusId, programId)
   const academicReady = (role === 'coordinator' || (!catalogLoading && !catalogError))
-    && validAcademicSelection(role, institutionId, programId, subjectIds, programs, subjects)
+    && validAcademicSelection(role, institutionId, campusId, programId, subjectIds, campuses, programs, subjects)
 
   const changeRole = (nextRole: RequestedRole) => {
     setRole(nextRole)
+    setCampusId('')
     setProgramId('')
     setSubjectIds([])
+    setCampuses([])
     setPrograms([])
     setSubjects([])
     setCatalogError('')
@@ -74,12 +79,14 @@ export function RegisterPage() {
     let active = true
     loadRegistrationCatalog(institutionId).then((catalog) => {
       if (!active) return
+      setCampuses(catalog.campuses)
       setPrograms(catalog.programs)
       setSubjects(catalog.subjects)
       setCatalogError('')
       setCatalogLoading(false)
     }).catch(() => {
       if (!active) return
+      setCampuses([])
       setPrograms([])
       setSubjects([])
       setCatalogError('No pudimos cargar la oferta académica.')
@@ -126,7 +133,7 @@ export function RegisterPage() {
         options: {
           captchaToken,
           emailRedirectTo: `${window.location.origin}/email-confirmation`,
-          data: registrationMetadata(role, institutionId, fullName, identifier, programId, subjectIds),
+          data: registrationMetadata(role, institutionId, fullName, identifier, campusId, programId, subjectIds),
         },
       })
       if (signUpError) {
@@ -164,27 +171,30 @@ export function RegisterPage() {
           </label>
         </fieldset>
         <label className="field"><span>Institución</span><select name="institution" required value={institutionId} disabled={institutionsLoading || institutions.length === 0} onChange={(event) => {
-          setInstitutionId(event.target.value); setProgramId(''); setSubjectIds([])
-          setPrograms([]); setSubjects([]); setCatalogError(''); setCatalogLoading(role !== 'coordinator')
+          setInstitutionId(event.target.value); setCampusId(''); setProgramId(''); setSubjectIds([])
+          setCampuses([]); setPrograms([]); setSubjects([]); setCatalogError(''); setCatalogLoading(role !== 'coordinator')
         }}><option value="" disabled>{institutionsLoading ? 'Cargando instituciones…' : 'Selecciona tu institución'}</option>{institutions.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
         {institutionsError && <p className="form-error" role="alert">{institutionsError} <button className="text-button" type="button" onClick={() => {
           setInstitutionsError('')
           setInstitutionsLoading(true)
           getRegistrationInstitutions().then((items) => { setInstitutions(items); setInstitutionsLoading(false) }).catch(() => { setInstitutionsError('No pudimos cargar las instituciones. Inténtalo de nuevo.'); setInstitutionsLoading(false) })
         }}>Reintentar</button></p>}
+        {role !== 'coordinator' && <label className="field"><span>Campus / sede</span><select value={campusId} required disabled={!institutionId || catalogLoading || campuses.length === 0} onChange={(event) => {
+          setCampusId(event.target.value); setProgramId(''); setSubjectIds([])
+        }}><option value="" disabled>{catalogLoading ? 'Cargando campus…' : 'Selecciona tu campus'}</option>{campuses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>}
         <div className="form-grid">
           <label className="field"><span>Nombre completo</span><input name="fullName" autoComplete="name" placeholder="Nombre y apellidos" maxLength={120} required /></label>
           <label className="field"><span>Correo institucional</span><input name="email" type="email" autoComplete="email" placeholder="nombre@institucion.edu.mx" required /></label>
           <label className="field"><span>{labels.identifier}</span><input name="accountNumber" placeholder={role === 'student' ? 'Número de cuenta' : 'Número de empleado'} maxLength={64} required /></label>
           {role === 'student' && <label className="field"><span>Carrera / programa</span><select value={programId} onChange={(event) => {
             setProgramId(event.target.value); setSubjectIds([])
-          }} required disabled={!institutionId || catalogLoading || programs.length === 0}>
+          }} required disabled={!campusId || catalogLoading || visiblePrograms.length === 0}>
             <option value="" disabled>{catalogLoading ? 'Cargando programas…' : 'Selecciona tu programa'}</option>
-            {programs.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}
+            {visiblePrograms.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}
           </select></label>}
         </div>
-        {role === 'student' && institutionId && !catalogLoading && !catalogError && catalogEmptyMessage && <p className="registration-catalog-empty" role="status">{catalogEmptyMessage}</p>}
-        {institutionId && role !== 'coordinator' && !(role === 'student' && !catalogLoading && !catalogError && catalogEmptyMessage) && <fieldset className="registration-subjects" disabled={catalogLoading || (role === 'student' && !programId)}>
+        {role !== 'coordinator' && institutionId && !catalogLoading && !catalogError && catalogEmptyMessage && <p className="registration-catalog-empty" role="status">{catalogEmptyMessage}</p>}
+        {institutionId && role !== 'coordinator' && !(catalogEmptyMessage && !catalogLoading && !catalogError) && <fieldset className="registration-subjects" disabled={catalogLoading || !campusId || (role === 'student' && !programId)}>
           <legend>{labels.subjects} <span>(elige una o varias)</span></legend>
           {catalogLoading ? <p role="status">Cargando materias…</p> : catalogError ? <p role="alert">{catalogError} <button type="button" className="text-button" onClick={() => {
             setCatalogError(''); setCatalogLoading(true); setCatalogRevision((value) => value + 1)

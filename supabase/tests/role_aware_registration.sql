@@ -9,6 +9,8 @@ do $fixture$
 declare
   ipn uuid;
   unam uuid;
+  campus_a uuid;
+  campus_b uuid;
   program_a uuid := 'a1000000-0000-4000-8000-000000000001';
   program_b uuid := 'a1000000-0000-4000-8000-000000000002';
   subject_a1 uuid := 'a2000000-0000-4000-8000-000000000001';
@@ -26,15 +28,17 @@ declare
 begin
   select id into strict ipn from public.institutions where slug = 'ipn';
   select id into strict unam from public.institutions where slug = 'unam';
+  select id into strict campus_a from public.campuses where institution_id=ipn and code='CAT-1';
+  select id into strict campus_b from public.campuses where institution_id=unam and code='CAT-1';
   insert into qa_ids values
-    ('ipn',ipn),('unam',unam),('program_a',program_a),('program_b',program_b),
+    ('ipn',ipn),('unam',unam),('campus_a',campus_a),('campus_b',campus_b),('program_a',program_a),('program_b',program_b),
     ('subject_a1',subject_a1),('subject_a2',subject_a2),('subject_b',subject_b),
     ('student_a',student_a),('teacher_a',teacher_a),('reject_a',reject_a),
     ('student_b',student_b),('coordinator_a',coordinator_a),('legacy_a',legacy_a);
 
-  insert into public.programs (id,institution_id,name,code)
-    values (program_a,ipn,'QA Programa A','QA16-A'),
-           (program_b,unam,'QA Programa B','QA16-B');
+  insert into public.programs (id,institution_id,campus_id,name,code)
+    values (program_a,ipn,campus_a,'QA Programa A','QA16-A'),
+           (program_b,unam,campus_b,'QA Programa B','QA16-B');
   insert into public.subjects (id,institution_id,program_id,name,code)
     values (subject_a1,ipn,program_a,'QA Materia A1','QA16-A1'),
            (subject_a2,ipn,program_a,'QA Materia A2','QA16-A2'),
@@ -44,7 +48,8 @@ begin
     'institution_id',ipn::text,'full_name','QA Solicitante',
     'institutional_identifier','QA16-S');
   requested := base || pg_catalog.jsonb_build_object(
-    'requested_role','student','requested_program_id',program_a::text,
+    'requested_role','student','requested_campus_id',campus_a::text,
+    'requested_program_id',program_a::text,
     'requested_subject_ids',pg_catalog.jsonb_build_array(subject_a1::text,subject_a2::text));
   insert into auth.users (id,email,raw_user_meta_data,email_confirmed_at)
     values (student_a,'qa16.student@example.test',requested,now());
@@ -59,6 +64,7 @@ begin
   insert into qa_results values ('request metadata removed after normalization', not exists (
     select 1 from auth.users u where u.id=student_a and (
       u.raw_user_meta_data ? 'requested_role' or
+      u.raw_user_meta_data ? 'requested_campus_id' or
       u.raw_user_meta_data ? 'requested_program_id' or
       u.raw_user_meta_data ? 'requested_subject_ids')));
   insert into qa_results values ('student pending has no role', not exists (
@@ -66,7 +72,7 @@ begin
 
   requested := base || pg_catalog.jsonb_build_object(
     'institutional_identifier','QA16-T',
-    'requested_role','teacher',
+    'requested_role','teacher','requested_campus_id',campus_a::text,
     'requested_subject_ids',pg_catalog.jsonb_build_array(subject_a1::text,subject_a2::text));
   insert into auth.users (id,email,raw_user_meta_data,email_confirmed_at)
     values (teacher_a,'qa16.teacher@example.test',requested,now());
@@ -80,7 +86,8 @@ begin
     values (reject_a,'qa16.reject@example.test',
       (base || pg_catalog.jsonb_build_object(
         'institutional_identifier','QA16-R',
-        'requested_role','student','requested_program_id',program_a::text,
+        'requested_role','student','requested_campus_id',campus_a::text,
+        'requested_program_id',program_a::text,
         'requested_subject_ids',pg_catalog.jsonb_build_array(subject_a1::text))),now());
 
   insert into auth.users (id,email,raw_user_meta_data,email_confirmed_at)
@@ -88,7 +95,8 @@ begin
       pg_catalog.jsonb_build_object(
         'institution_id',unam::text,'full_name','QA Otra Institución',
         'institutional_identifier','QA16-B',
-        'requested_role','student','requested_program_id',program_b::text,
+        'requested_role','student','requested_campus_id',campus_b::text,
+        'requested_program_id',program_b::text,
         'requested_subject_ids',pg_catalog.jsonb_build_array(subject_b::text)),now());
 
   insert into auth.users (id,email,raw_user_meta_data,email_confirmed_at)
@@ -129,7 +137,7 @@ begin
     insert into auth.users (id,email,raw_user_meta_data)
       values (gen_random_uuid(),'qa16.crossprogram@example.test',
         base || pg_catalog.jsonb_build_object(
-          'institutional_identifier','QA16-CP','requested_role','student',
+          'institutional_identifier','QA16-CP','requested_role','student','requested_campus_id',campus_a::text,
           'requested_program_id',program_b::text,
           'requested_subject_ids',pg_catalog.jsonb_build_array(subject_a1::text)));
     insert into qa_results values ('cross institution program rejected',false);
@@ -140,7 +148,7 @@ begin
     insert into auth.users (id,email,raw_user_meta_data)
       values (gen_random_uuid(),'qa16.crosssubject@example.test',
         base || pg_catalog.jsonb_build_object(
-          'institutional_identifier','QA16-CS','requested_role','student',
+          'institutional_identifier','QA16-CS','requested_role','student','requested_campus_id',campus_a::text,
           'requested_program_id',program_a::text,
           'requested_subject_ids',pg_catalog.jsonb_build_array(subject_b::text)));
     insert into qa_results values ('cross institution subject rejected',false);
@@ -151,7 +159,7 @@ begin
     insert into auth.users (id,email,raw_user_meta_data)
       values (gen_random_uuid(),'qa16.missing@example.test',
         base || pg_catalog.jsonb_build_object(
-          'institutional_identifier','QA16-MISS','requested_role','teacher',
+          'institutional_identifier','QA16-MISS','requested_role','teacher','requested_campus_id',campus_a::text,
           'requested_subject_ids',pg_catalog.jsonb_build_array()));
     insert into qa_results values ('empty subject request rejected',false);
   exception when others then

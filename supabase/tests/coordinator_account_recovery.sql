@@ -9,6 +9,8 @@ do $fixture$
 declare
   ipn uuid;
   unam uuid;
+  campus_a uuid;
+  campus_b uuid;
   program_a uuid := 'b7100000-0000-4000-8000-000000000001';
   program_b uuid := 'b7100000-0000-4000-8000-000000000002';
   subject_a uuid := 'b7200000-0000-4000-8000-000000000001';
@@ -27,8 +29,10 @@ declare
 begin
   select id into strict ipn from public.institutions where slug='ipn';
   select id into strict unam from public.institutions where slug='unam';
+  select id into strict campus_a from public.campuses where institution_id=ipn and code='CAT-1';
+  select id into strict campus_b from public.campuses where institution_id=unam and code='CAT-1';
   insert into qa17_ids values
-    ('ipn',ipn),('unam',unam),('admin_a',admin_a),
+    ('ipn',ipn),('unam',unam),('campus_a',campus_a),('campus_b',campus_b),('admin_a',admin_a),
     ('coordinator_a',coordinator_a),('self_actor',self_actor),
     ('student_a',student_a),('teacher_a',teacher_a),('reject_a',reject_a),
     ('student_b',student_b),('coordinator_b',coordinator_b),
@@ -36,9 +40,9 @@ begin
   insert into qa17_ids (name,id)
     select 'role_'||code,id from public.roles where code in ('admin','hr');
 
-  insert into public.programs (id,institution_id,name,code) values
-    (program_a,ipn,'QA17 Programa A','QA17-A'),
-    (program_b,unam,'QA17 Programa B','QA17-B');
+  insert into public.programs (id,institution_id,campus_id,name,code) values
+    (program_a,ipn,campus_a,'QA17 Programa A','QA17-A'),
+    (program_b,unam,campus_b,'QA17 Programa B','QA17-B');
   insert into public.subjects (id,institution_id,program_id,name,code) values
     (subject_a,ipn,program_a,'QA17 Materia A','QA17-A'),
     (subject_b,unam,program_b,'QA17 Materia B','QA17-B');
@@ -82,17 +86,19 @@ begin
     values (student_a,'qa17.student@example.test',
       base || pg_catalog.jsonb_build_object(
         'institutional_identifier','QA17-STUDENT','requested_role','student',
-        'requested_program_id',program_a::text,
+        'requested_campus_id',campus_a::text,'requested_program_id',program_a::text,
         'requested_subject_ids',pg_catalog.jsonb_build_array(subject_a::text)),now());
   insert into auth.users (id,email,raw_user_meta_data,email_confirmed_at)
     values (teacher_a,'qa17.teacher@example.test',
       base || pg_catalog.jsonb_build_object(
         'institutional_identifier','QA17-TEACHER','requested_role','teacher',
+        'requested_campus_id',campus_a::text,
         'requested_subject_ids',pg_catalog.jsonb_build_array(subject_a::text)),now());
   insert into auth.users (id,email,raw_user_meta_data,email_confirmed_at)
     values (reject_a,'qa17.reject@example.test',
       base || pg_catalog.jsonb_build_object(
         'institutional_identifier','QA17-REJECT','requested_role','student',
+        'requested_campus_id',campus_a::text,
         'requested_program_id',program_a::text,
         'requested_subject_ids',pg_catalog.jsonb_build_array(subject_a::text)),now());
   insert into auth.users (id,email,raw_user_meta_data,email_confirmed_at)
@@ -100,7 +106,7 @@ begin
       pg_catalog.jsonb_build_object(
         'institution_id',unam::text,'full_name','QA17 Otra Institución',
         'institutional_identifier','QA17-OTHER-STUDENT','requested_role','student',
-        'requested_program_id',program_b::text,
+        'requested_campus_id',campus_b::text,'requested_program_id',program_b::text,
         'requested_subject_ids',pg_catalog.jsonb_build_array(subject_b::text)),now());
   insert into auth.users (id,email,raw_user_meta_data,email_confirmed_at)
     values (coordinator_b,'qa17.other-coordinator@example.test',

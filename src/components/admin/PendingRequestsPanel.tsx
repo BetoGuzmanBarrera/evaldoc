@@ -40,7 +40,7 @@ export function PendingRequestsPanel({ onChanged, role }: { onChanged: () => voi
         <dl>
           <div><dt>Institución</dt><dd>{request.institution}</dd></div>
           <div><dt>Tipo solicitado</dt><dd>{request.requestedRole === 'coordinator' ? 'Coordinador' : request.requestedRole === 'teacher' ? 'Docente' : 'Estudiante'}</dd></div>
-          {request.requestedRole !== 'coordinator' && <><div><dt>Programa solicitado</dt><dd>{request.program ?? 'No aplica'}</dd></div>
+          {request.requestedRole !== 'coordinator' && <><div><dt>Campus solicitado</dt><dd>{request.campus ?? 'No aplica'}</dd></div><div><dt>Programa solicitado</dt><dd>{request.program ?? 'No aplica'}</dd></div>
           <div><dt>Materias solicitadas</dt><dd>{request.subjects.join(', ')}</dd></div></>}
           <div><dt>Estado</dt><dd>Pendiente</dd></div>
         </dl>
