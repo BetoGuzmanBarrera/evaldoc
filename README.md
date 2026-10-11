@@ -41,7 +41,7 @@ npm run test:turnstile
 npm run test:turnstile:local
 ```
 
-La [gestión académica](docs/academic-catalog-management.md) documenta la relación campus→carrera, las RPC y la preservación QA. Las suites SQL en `supabase/tests/` se ejecutan contra la base local con `psql` y concluyen con `ROLLBACK`; el procedimiento y resultados están en [validación final](docs/final-validation.md). Las pruebas locales de Auth y Turnstile crean usuarios ficticios y eliminan únicamente sus propios fixtures al finalizar; verificar siempre el puerto 55421 y los conteos QA antes/después. No ejecutar `db reset` para limpiar pruebas cuando se preserva un escenario local.
+La [gestión académica](docs/academic-catalog-management.md) documenta la relación campus→carrera, las RPC y la preservación QA. La [clasificación docente y los reportes](docs/teacher-classification-reports.md) documentan los rangos 0–10, el umbral de privacidad y la regla central. Las suites SQL en `supabase/tests/` se ejecutan contra la base local con `psql` y concluyen con `ROLLBACK`; el procedimiento y resultados están en [validación final](docs/final-validation.md). Las pruebas locales de Auth y Turnstile crean usuarios ficticios y eliminan únicamente sus propios fixtures al finalizar; verificar siempre el puerto 55421 y los conteos QA antes/después. No ejecutar `db reset` para limpiar pruebas cuando se preserva un escenario local.
 
 Carpetas principales: `src/pages` y `src/components` (UI); `src/auth`, `src/hooks`, `src/lib`, `src/routes` (sesión, consultas y permisos visuales); `supabase/migrations`, `supabase/seed.sql`, `supabase/tests` (modelo y reglas); `tests` (pruebas Node); `design/reference` (PNG de referencia); `docs` (DER, diccionario, seguridad, evidencia y reporte escolar).
 

@@ -9,6 +9,14 @@
 .institutional-filters select{width:100%;height:40px;border:1px solid var(--border);border-radius:10px;background:#F8FAFC;color:#667085;padding:0 12px;font-size:12px;font-weight:600}
 .institutional-filters-embedded{grid-template-columns:repeat(4,minmax(0,1fr));padding:0}
 .institutional-metrics .metric-card{min-height:130px}
+.coordinator-classification-summary{padding:20px;min-width:0}
+.coordinator-classification-summary h2{font-size:17px;font-weight:700;color:var(--navy);margin-bottom:14px}
+.coordinator-classification-summary>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.coordinator-classification-summary>div p{border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.coordinator-classification-summary>div strong{font-weight:600}
+.coordinator-classification-summary>div span{font-weight:700;color:var(--primary)}
+.coordinator-classification-note{font-size:12px;line-height:1.5;color:#667085;margin-top:14px}
+@media(max-width:600px){.coordinator-classification-summary>div{grid-template-columns:1fr}}
 .institutional-chart-grid{display:grid;grid-template-columns:minmax(0,2.7fr) minmax(0,1fr);gap:16px;min-width:0}
 .institutional-participation-panel,.institutional-score-panel{height:250px;padding:20px;min-width:0}
 .institutional-participation-panel{overflow-x:auto}

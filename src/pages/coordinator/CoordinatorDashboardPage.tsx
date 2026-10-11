@@ -14,6 +14,7 @@ import { PdfDownloadButton } from '../../components/ui/PdfDownloadButton'
 import { AnalyticsExtremes, PeriodComparisonCard } from '../../components/ui/AnalyticsInsights'
 import { useInstitutionalData } from '../../hooks/useInstitutionalData'
 import { useAuth } from '../../hooks/useAuth'
+import { classificationDisclaimer, classifyTeacherScore, teacherClassificationLabel } from '../../lib/teacherClassification'
 import {
   loadAnalyticsBreakdown, loadAnalyticsOverview, loadAnalyticsTrend,
   loadPeriodComparison, loadQuestionAnalytics,
@@ -30,6 +31,7 @@ const rankingColumns: DataColumn<TeacherRankingRow>[] = [
   { label: 'Docente', render: (teacher) => teacher.name },
   { label: 'Promedio / 10', render: (teacher) => teacher.averageScore.toFixed(1) },
   { label: 'Respuestas publicables', render: (teacher) => teacher.responseCount },
+  { label: 'Clasificación', render: (teacher) => teacherClassificationLabel(classifyTeacherScore(teacher.averageScore, teacher.responseCount)) },
   { label: 'Asignaciones', render: (teacher) => teacher.assignmentCount },
 ]
 const participationColumns: DataColumn<ParticipationRow>[] = [
@@ -116,7 +118,12 @@ export function CoordinatorDashboardPage() {
         <DataTable title="Promedio por campus, programa y grupo" columns={breakdownColumns} rows={data.breakdown} getRowKey={(row) => row.scope + ':' + row.id} emptyMessage="Resultados insuficientes para proteger el anonimato en este filtro." minWidth={720} />
         <AnalyticsExtremes title="Docentes con promedios extremos" items={data.ranking.map((teacher) => ({ label: teacher.name, score: teacher.averageScore }))} />
         <DataTable title="Participación por campus, programa, grupo y periodo" columns={participationColumns} rows={data.participation.filter((row) => row.scope !== 'total')} getRowKey={(row) => row.scope + ':' + row.id} minWidth={680} />
-        <DataTable title="Ranking docente institucional" columns={rankingColumns} rows={data.ranking} getRowKey={(teacher) => teacher.id} emptyMessage="No hay docentes con resultados publicables para estos filtros." minWidth={660} />
+        <DataTable title="Ranking docente institucional" columns={rankingColumns} rows={data.ranking} getRowKey={(teacher) => teacher.id} emptyMessage="No hay docentes con resultados publicables para estos filtros." minWidth={760} />
+        <section className="surface coordinator-classification-summary" aria-label="Resumen de clasificaciones publicables">
+          <h2>Clasificación de docentes con resultados publicables</h2>
+          <div>{(['contratable', 'intermedio', 'no_contratable'] as const).map((category) => <p key={category}><strong>{teacherClassificationLabel(category)}</strong><span>{data.ranking.filter((teacher) => classifyTeacherScore(teacher.averageScore, teacher.responseCount) === category).length}</span></p>)}</div>
+          <p className="coordinator-classification-note">Los docentes con resultados protegidos no se incluyen en este ranking ni se clasifican. {classificationDisclaimer}</p>
+        </section>
         <AnalyticsExtremes title="Reactivos con mayor y menor promedio" items={data.questions.map((question) => ({ label: question.text, score: question.averageScore }))} />
         <DataTable title="Promedio por reactivo oficial" columns={questionColumns} rows={data.questions} getRowKey={(row) => String(row.order) + ':' + row.text} emptyMessage="Resultados insuficientes para proteger el anonimato en este filtro." minWidth={760} />
       </>}

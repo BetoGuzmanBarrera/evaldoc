@@ -1,6 +1,7 @@
 import type { AnalyticsBreakdownRow, AnalyticsOverview, AnalyticsTrendPoint, QuestionAnalyticsRow } from './institutionalAnalytics'
 import type { ParticipationRow, TeacherRankingRow, HrTeacherRow } from './institutionalDashboards'
 import type { TeacherAssignmentResult, TeacherPeriodResult } from './teacherResults'
+import { classifyTeacherScore, pdfClassificationDisclaimer, teacherClassificationLabel } from './teacherClassification.ts'
 
 export type ReportKind = 'Avance' | 'Participacion' | 'Docente' | 'Historico' | 'Institucional'
 
@@ -73,46 +74,54 @@ export function participationReport(base: Omit<PdfReport, 'kind' | 'title' | 'me
 }
 
 export function teacherReport(base: Omit<PdfReport, 'kind' | 'title' | 'metrics' | 'sections'>, teacherName: string, assignment: TeacherAssignmentResult, history: TeacherPeriodResult[]): PdfReport {
-  const published = assignment.published && assignment.responseCount >= 5 && assignment.averageScore !== null
+  const classification = classifyTeacherScore(assignment.averageScore, assignment.published ? assignment.responseCount : 0)
+  const published = classification !== 'protected' && classification !== 'unavailable'
   const questions = published && assignment.questions.length === 15 ? [...assignment.questions].sort((a, b) => a.position - b.position) : []
+  const ordered = [...questions].sort((a, b) => a.score - b.score)
+  const insight = ordered.length === 15 && ordered[0].score < ordered[14].score
+    ? `Fortaleza: ${ordered[14].label}. Área de oportunidad: ${ordered[0].label}.`
+    : undefined
   return {
     ...base, kind: 'Docente', title: `Resultados docentes · ${teacherName}`,
     period: assignment.periodName,
-    filters: [...base.filters, `Materia: ${assignment.subjectName}`, `Grupo: ${assignment.groupCode}`],
+    filters: [...base.filters, `Campus: ${assignment.campusName ?? 'No configurado'}`, `Programa: ${assignment.programName ?? 'No configurado'}`, `Materia: ${assignment.subjectName}`, `Grupo: ${assignment.groupCode}`],
     metrics: [
       { label: 'Evaluaciones', value: String(assignment.responseCount) },
-      { label: 'Promedio general', value: published ? score(assignment.averageScore) : 'Protegido' },
-      { label: 'Valoración favorable', value: published && assignment.favorablePercent !== null ? percent(assignment.favorablePercent) : 'Protegido' },
+      { label: 'Promedio general', value: published ? score(assignment.averageScore) : classification === 'protected' ? 'Protegido' : 'No disponible' },
+      { label: 'Clasificación institucional', value: teacherClassificationLabel(classification) },
+      { label: 'Valoración favorable', value: published && assignment.favorablePercent !== null ? percent(assignment.favorablePercent) : classification === 'protected' ? 'Protegido' : 'No disponible' },
     ],
     sections: [
       { title: 'Reactivos oficiales', columns: ['#', 'Reactivo', 'Promedio'],
         rows: questions.map((item) => [String(item.position), item.label, score(item.score)]),
         bars: questions.map((item) => ({ label: `${item.position}. ${item.label}`, value: item.score, maximum: 10 })),
-        note: questions.length === 0 ? published ? 'El desglose no está disponible por coexistencia de versiones de plantilla.' : insufficientNotice : undefined,
+        note: questions.length === 0 ? published ? 'El desglose no está disponible por coexistencia de versiones de plantilla.' : insufficientNotice : insight,
       },
       { title: 'Histórico publicable', columns: ['Periodo', 'Evaluaciones publicables', 'Promedio'],
         rows: history.map((item) => [item.name, String(item.publishedResponses), score(item.averageScore)]),
       },
+      { title: 'Nota institucional', columns: [], rows: [], note: pdfClassificationDisclaimer },
     ],
   }
 }
 
-export function historyReport(base: Omit<PdfReport, 'kind' | 'title' | 'metrics' | 'sections'>, periods: { name: string; startsAt: string; averageScore: number | null; responseCount: number }[]): PdfReport {
+export function historyReport(base: Omit<PdfReport, 'kind' | 'title' | 'metrics' | 'sections'>, periods: { name: string; startsAt: string; averageScore: number | null; responseCount: number }[], teacherHistory = false): PdfReport {
   const sorted = [...periods].sort((a, b) => a.startsAt.localeCompare(b.startsAt))
   const rows = sorted.map((item, index) => {
     const previous = sorted[index - 1]
     const delta = previous?.averageScore != null && item.averageScore != null ? item.averageScore - previous.averageScore : null
     const relative = delta !== null && previous?.averageScore != null && previous.averageScore !== 0 ? (delta / previous.averageScore) * 100 : null
-    return [item.name, String(item.responseCount), score(item.averageScore), delta === null ? 'Sin comparativo' : `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}`, relative === null ? '—' : `${relative >= 0 ? '+' : ''}${relative.toFixed(1)}%`]
+    const values = [item.name, String(item.responseCount), score(item.averageScore), delta === null ? 'Sin comparativo' : `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}`, relative === null ? '—' : `${relative >= 0 ? '+' : ''}${relative.toFixed(1)}%`]
+    return teacherHistory ? [...values, teacherClassificationLabel(classifyTeacherScore(item.averageScore, item.responseCount))] : values
   })
   const publishable = sorted.filter((item) => item.averageScore !== null)
   return {
     ...base, kind: 'Historico', title: 'Comparativo histórico',
     metrics: [{ label: 'Periodos', value: String(sorted.length) }, { label: 'Con resultados publicables', value: String(publishable.length) }],
-    sections: [{ title: 'Evolución por periodo', columns: ['Periodo', 'Respuestas', 'Promedio', 'Cambio', 'Cambio %'], rows,
+    sections: [{ title: 'Evolución por periodo', columns: ['Periodo', 'Respuestas', 'Promedio', 'Cambio', 'Cambio %', ...(teacherHistory ? ['Clasificación'] : [])], rows,
       bars: publishable.map((item) => ({ label: item.name, value: item.averageScore ?? 0, maximum: 10 })),
       note: sorted.length === 0 ? 'No hay periodos con datos para los filtros seleccionados.' : undefined,
-    }],
+    }, ...(teacherHistory ? [{ title: 'Nota institucional', columns: [], rows: [], note: pdfClassificationDisclaimer }] : [])],
   }
 }
 
@@ -140,14 +149,15 @@ export function executiveReport(base: Omit<PdfReport, 'kind' | 'title' | 'metric
         bars: data.trend.filter((item) => item.averageScore !== null).map((item) => ({ label: item.periodName, value: item.averageScore ?? 0, maximum: 10 })),
       },
       { title: 'Campus, programas y grupos publicables', columns: ['Ámbito', 'Nombre', 'Promedio', 'Respuestas'],
-        rows: (data.breakdown ?? []).map((item) => [item.scope, item.label, score(item.averageScore), String(item.responseCount)]),
+        rows: (data.breakdown ?? []).map((item) => [scope(item.scope), item.label, score(item.averageScore), String(item.responseCount)]),
       },
       { title: 'Reactivos oficiales agregados', columns: ['#', 'Reactivo', 'Promedio', 'Respuestas'],
         rows: (data.questions ?? []).map((item) => [String(item.order), item.text, score(item.averageScore), String(item.responseCount)]),
       },
-      { title: 'Docentes publicables', columns: ['Docente', 'Promedio', 'Respuestas'],
-        rows: (data.ranking ?? []).map((item) => [item.name, score(item.averageScore), String(item.responseCount)]),
+      { title: 'Docentes publicables', columns: ['Docente', 'Promedio', 'Respuestas', 'Clasificación'],
+        rows: (data.ranking ?? []).map((item) => [item.name, score(item.averageScore), String(item.responseCount), teacherClassificationLabel(classifyTeacherScore(item.averageScore, item.responseCount))]),
       },
+      { title: 'Nota institucional', columns: [], rows: [], note: data.ranking ? pdfClassificationDisclaimer : undefined },
       { title: 'Indicadores de RRHH', columns: ['Docente', 'Categoría', 'Promedio'],
         rows: (data.hr ?? []).map((item) => [item.name, item.category, score(item.averageScore)]),
         note: data.hr?.length ? 'Categorías descriptivas; no representan decisiones laborales automáticas.' : undefined,

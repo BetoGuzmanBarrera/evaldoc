@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom'
 import { DimensionBars } from '../../components/charts/DimensionBars'
 import { TeacherLayout } from '../../components/layout/TeacherLayout'
 import { TeacherPrivacyNotice } from '../../components/teacher/TeacherPrivacyNotice'
+import { TeacherClassificationCard } from '../../components/teacher/TeacherClassificationCard'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { LoadingSkeleton } from '../../components/ui/LoadingSkeleton'
 import { PdfDownloadButton } from '../../components/ui/PdfDownloadButton'
@@ -33,6 +34,9 @@ export function TeacherResultPage() {
     <div className="teacher-content teacher-result-content">
       <div className="surface teacher-filters" aria-label="Contexto de resultados">
         <div className="teacher-filter-value">Periodo: {result.periodName}</div>
+        <div className="teacher-filter-value">Campus: {result.campusName ?? 'No configurado'}</div>
+        <div className="teacher-filter-value">Programa: {result.programName ?? 'No configurado'}</div>
+        <div className="teacher-filter-value">Materia: {result.subjectName}</div>
         <div className="teacher-filter-value">Grupo: {result.groupCode}</div>
         <Link className="teacher-filter-value teacher-filter-link" to="/teacher/history">Comparar periodos</Link>
       </div>
@@ -43,6 +47,7 @@ export function TeacherResultPage() {
           <span>{hasSpread ? lowest.label + ' tiene el menor promedio entre los reactivos publicados.' : highest ? 'Los reactivos publicados tienen el mismo promedio.' : 'Se necesitan cinco evaluaciones completas de esta asignación para mostrar promedios y desglose.'}</span>
         </section>
       </div>
+      <TeacherClassificationCard average={result.averageScore} responseCount={result.published ? result.responseCount : 0} />
       {dimensions.length === 15
         ? <DimensionBars title="Resultados por reactivo / 10" dimensions={dimensions} />
         : <EmptyState title={result.responseCount === 0 ? 'Sin evaluaciones recibidas' : 'Desglose no disponible'} message={result.published ? 'Las respuestas utilizan distintas versiones de plantilla y no se combinan por reactivo.' : 'Los promedios se publican al reunir cinco evaluaciones completas de esta asignación.'} />}

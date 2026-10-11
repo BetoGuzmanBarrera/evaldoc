@@ -51,6 +51,13 @@ export interface TeacherAssignmentResult {
   favorablePercent: number | null
   questions: TeacherQuestionScore[]
   published: boolean
+  campusName?: string | null
+  programName?: string | null
+}
+
+export interface TeacherAssignmentContext {
+  campusName: string | null
+  programName: string | null
 }
 
 export interface TeacherPeriodResult {
@@ -91,6 +98,13 @@ export async function loadTeacherAssignments(assignmentId: string | null = null)
     questions: toQuestionScores(row.question_scores),
     published: row.published,
   }))
+}
+
+export async function loadTeacherAssignmentContext(assignmentId: string): Promise<TeacherAssignmentContext> {
+  const { data, error } = await supabase.rpc('teacher_assignment_context', { p_assignment_id: assignmentId })
+  if (error || !Array.isArray(data) || data.length !== 1) throw new Error('teacher_context_load_failed')
+  const row = data[0] as { campus_name: string | null; program_name: string | null }
+  return { campusName: row.campus_name, programName: row.program_name }
 }
 
 export async function loadTeacherHistory(): Promise<TeacherPeriodResult[]> {

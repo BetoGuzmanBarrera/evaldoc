@@ -1,6 +1,6 @@
 import { loadAnalyticsBreakdown, loadAnalyticsOverview, loadAnalyticsTrend, loadQuestionAnalytics } from './institutionalAnalytics'
 import { loadHrMetrics, loadInstitutionOverview, loadInstitutionalOptions, loadParticipation, loadRanking, type InstitutionalFilters } from './institutionalDashboards'
-import { loadTeacherAssignments, loadTeacherHistory } from './teacherResults'
+import { loadTeacherAssignmentContext, loadTeacherAssignments, loadTeacherHistory } from './teacherResults'
 import { executiveReport, historyReport, participationReport, progressReport, teacherReport, type PdfReport } from './pdfReportModel'
 
 type InstitutionalRole = 'coordinator' | 'hr' | 'admin'
@@ -20,12 +20,13 @@ export async function loadPdfReport(request: ReportRequest): Promise<PdfReport> 
     ])
     const assignment = assignments.find((item) => item.id === request.assignmentId)
     if (!assignment) throw new Error('report_access_denied')
-    return teacherReport({ institution: request.institution, period: assignment.periodName, generatedAt, filters: [] }, request.teacherName, assignment, history)
+    const context = await loadTeacherAssignmentContext(request.assignmentId)
+    return teacherReport({ institution: request.institution, period: assignment.periodName, generatedAt, filters: [] }, request.teacherName, { ...assignment, ...context }, history)
   }
   if (request.kind === 'teacherHistory') {
     const history = await loadTeacherHistory()
     return historyReport({ institution: request.institution, period: 'Todos los periodos', generatedAt, filters: [] },
-      history.map((item) => ({ name: item.name, startsAt: item.startsAt, averageScore: item.averageScore, responseCount: item.publishedResponses })))
+      history.map((item) => ({ name: item.name, startsAt: item.startsAt, averageScore: item.averageScore, responseCount: item.publishedResponses })), true)
   }
 
   // Every institutional RPC resolves the institution and active role in PostgreSQL.
