@@ -41,7 +41,7 @@ Implementar y validar localmente una plataforma web multiinstitucional que regis
 
 ## 6. Alcance del sistema
 
-La aplicación incluye vistas de estudiante, docente, Coordinación, Recursos Humanos y administración técnica institucional. Modela instituciones, campus, carreras o programas, materias, grupos, periodos, plantillas de encuesta, ventanas de evaluación, instalaciones vinculables a programas y resultados históricos. Coordinación puede administrar materias, periodos, grupos, asignaciones e inscripciones de su institución. El catálogo público inicial contiene campus y carreras; las materias no se precargan de forma masiva.
+La aplicación incluye vistas de estudiante, docente, Coordinación, Recursos Humanos y administración técnica institucional. Modela instituciones, campus, carreras o programas, materias, grupos, periodos, plantillas de encuesta, ventanas de evaluación, instalaciones vinculables a programas y resultados históricos. Coordinación puede administrar materias, periodos, grupos, asignaciones e inscripciones de su institución. El catálogo académico local contiene 189 materias importadas para las 63 carreras públicas, además de dos materias QA conservadas; el registro público no pide materias.
 
 El alcance actual incluye registro, confirmación de correo, login, recuperación de contraseña, Turnstile en los formularios públicos pertinentes, evaluación, agregados, clasificación y PDF generado en el navegador. No incluye despliegue productivo, autenticación con Google, correos institucionales reales, edición visual de campus/carreras/instalaciones, pagos ni decisiones laborales automáticas. Algunas entradas de menú sin pantalla están deshabilitadas.
 
@@ -205,9 +205,9 @@ El [DER ampliado](database-er-diagram.md) y las migraciones detallan claves comp
 
 ## 13. Catálogo académico
 
-El catálogo público comprobado contiene **7 instituciones, 21 campus y 63 carreras activas visibles**: tres sedes por institución y tres carreras públicas por sede. La migración de gestión académica instala esa estructura; el seed conserva roles y plantilla oficial. Los programas QA históricos no se muestran como una carrera pública adicional. No se siembran materias para todas las carreras.
+El catálogo público comprobado contiene **7 instituciones, 21 campus y 63 carreras activas visibles**: tres sedes por institución y tres carreras públicas por sede. La migración de gestión académica instala esa estructura; el seed conserva roles y plantilla oficial. Los programas QA históricos no se muestran como una carrera pública adicional. La migración posterior importa 189 materias, tres por carrera pública, sin crear inscripciones ni asignaciones.
 
-La ruta conceptual es **Institución → Campus → Carrera → Materia → Grupo → Docente asignado / Alumno inscrito**. Materias y grupos se crean y administran desde Coordinación. Un grupo pertenece a una materia y un periodo; el campus se deriva de la carrera asociada a la materia. Al cambiar institución, sede o carrera en el registro, la UI limpia selecciones descendientes incompatibles.
+La ruta conceptual es **Institución → Campus → Carrera → Materia → Grupo → Docente asignado / Alumno inscrito**. Materias y grupos se crean y administran desde Coordinación. Un grupo pertenece a una materia y un periodo; el campus se deriva de la carrera asociada a la materia. Al cambiar institución o sede en el registro, la UI limpia las selecciones descendientes incompatibles. Ningún solicitante escoge materias.
 
 ## 14. Registro y onboarding
 
@@ -215,13 +215,13 @@ El registro público presenta las instituciones activas aunque aún no tengan ma
 
 | Solicitante | Selección inicial | Autoridad que decide |
 | --- | --- | --- |
-| Estudiante | Institución → campus → carrera pública → materias activas de esa carrera → correo. | Coordinación de la misma institución. |
-| Docente | Institución → campus → materias activas de esa sede → correo. | Coordinación de la misma institución. |
+| Estudiante | Institución → campus → carrera pública → correo; sin materias. | Coordinación de la misma institución. |
+| Docente | Institución → campus → correo; sin materias. | Coordinación de la misma institución. |
 | Coordinador | Institución → solicitud sin programa ni materias → correo. | Admin técnico de la misma institución. |
 
-El registro de estudiante o docente no continúa si faltan las materias requeridas; no se inventa oferta académica. Admin y HR no pueden solicitarse por el registro público. Una alta directa de Auth sin requested_role queda pending sin rol ni solicitud. La [migración final de prevención](../supabase/migrations/20261011044815_prevent_legacy_student_autogrant.sql) eliminó el autogrant heredado. Dos cuentas QA anteriores conservaron usuario y perfil, pero se les retiró únicamente el rol prematuro en la base local; la comprobación final encontró cero perfiles pending con rol.
+El estudiante puede solicitar una cuenta para una carrera sin materias; el docente, para un campus sin materias o carreras. La ausencia de requested_subject_ids y una lista vacía son válidas. Las solicitudes nuevas no crean registration_request_subjects; las filas antiguas se conservan como evidencia. Admin y HR no pueden solicitarse por el registro público. Una alta directa de Auth sin requested_role queda pending sin rol ni solicitud. La [migración final de prevención](../supabase/migrations/20261011044815_prevent_legacy_student_autogrant.sql) eliminó el autogrant heredado. Dos cuentas QA anteriores conservaron usuario y perfil, pero se les retiró únicamente el rol prematuro en la base local; la comprobación final encontró cero perfiles pending con rol.
 
-**Solicitud académica ≠ asignación real.** La aprobación activa el perfil y concede solo el rol solicitado permitido. No crea student_enrollments ni teaching_assignments. Las materias y campus pedidos siguen como evidencia histórica; Coordinación puede decidir después otra inscripción o asignación válida de la **misma institución**, aunque difiera de la solicitud original.
+**Solicitud académica ≠ asignación real.** La aprobación activa el perfil y concede solo el rol solicitado permitido. No crea student_enrollments ni teaching_assignments. Las sedes, carreras y materias pedidas en solicitudes históricas siguen como evidencia; Coordinación puede decidir después otra inscripción o asignación válida de la **misma institución**, aunque difiera de la solicitud original.
 
 ## 15. Diagramas de registro y aprobación
 
@@ -232,11 +232,9 @@ flowchart TD
   EST_INI["Estudiante: /register"] --> EST_INST["Institución activa"]
   EST_INST --> EST_CAMPUS["Campus activo de esa institución"]
   EST_CAMPUS --> EST_PROG["Carrera pública activa de ese campus"]
-  EST_PROG --> EST_MAT{"¿Hay materias activas compatibles?"}
-  EST_MAT -->|No| EST_VACIO["Mostrar estado vacío; no continuar"]
-  EST_MAT -->|Sí| EST_SELECCION["Seleccionar materias y completar formulario"]
-  EST_SELECCION --> EST_AUTH["Turnstile y alta en Supabase Auth"]
-  EST_AUTH --> EST_SOL["profiles pending; registration_requests y registration_request_subjects"]
+  EST_PROG --> EST_DATOS["Completar datos y correo; sin seleccionar materias"]
+  EST_DATOS --> EST_AUTH["Turnstile y alta en Supabase Auth"]
+  EST_AUTH --> EST_SOL["profiles pending y registration_requests; sin rol ni inscripción"]
   EST_SOL --> EST_CORREO["Confirmar correo"]
   EST_CORREO --> EST_REV["Coordinación revisa solicitud student"]
 ```
@@ -246,11 +244,9 @@ flowchart TD
 ```mermaid
 flowchart TD
   DOC_INI["Docente: /register"] --> DOC_INST["Institución activa y campus"]
-  DOC_INST --> DOC_MAT{"¿Hay materias activas de esa sede?"}
-  DOC_MAT -->|No| DOC_VACIO["Mostrar estado vacío; no continuar"]
-  DOC_MAT -->|Sí| DOC_SELECCION["Seleccionar materias y completar formulario"]
-  DOC_SELECCION --> DOC_AUTH["Turnstile y alta en Supabase Auth"]
-  DOC_AUTH --> DOC_SOL["profiles pending; registration_requests y registration_request_subjects"]
+  DOC_INST --> DOC_DATOS["Completar datos y correo; sin seleccionar materias"]
+  DOC_DATOS --> DOC_AUTH["Turnstile y alta en Supabase Auth"]
+  DOC_AUTH --> DOC_SOL["profiles pending y registration_requests; sin rol ni asignación"]
   DOC_SOL --> DOC_CORREO["Confirmar correo"]
   DOC_CORREO --> DOC_REV["Coordinación revisa solicitud teacher"]
 ```
@@ -346,7 +342,7 @@ En cuentas multirrol, la ruta inicial usa la prioridad visual documentada; el pe
 
 ## 19. Gestión académica
 
-Desde /coordinator se consultan el catálogo y los usuarios activos de la propia institución. Coordinación puede crear periodos, crear o modificar materias de carreras públicas, crear y activar/desactivar grupos, asignar docentes e inscribir estudiantes mediante RPC específicas. La estructura de un grupo se comprueba por materia, programa, campus y periodo; el usuario debe tener perfil activo y rol docente o estudiantil adecuado dentro de la institución. Las FK y las comprobaciones RPC impiden referencias cruzadas; UNIQUE rechaza una segunda asignación o inscripción idéntica.
+Desde /coordinator se consultan el catálogo y los usuarios activos de la propia institución. La selección institucional encadena campus, carrera, periodo, materia y grupo; después Coordinación elige el docente o estudiante. Coordinación puede crear periodos, crear o modificar materias de carreras públicas, crear y activar/desactivar grupos, asignar docentes e inscribir estudiantes mediante RPC específicas. La estructura de un grupo se comprueba por materia, programa, campus y periodo; el usuario debe tener perfil activo y rol docente o estudiantil adecuado dentro de la institución. Las FK y las comprobaciones RPC impiden referencias cruzadas; UNIQUE rechaza una segunda asignación o inscripción idéntica.
 
 registration_requests y registration_request_subjects permanecen como evidencia del onboarding. No son autorización permanente para una materia o sede. Aprobar por sí solo no crea membresías. El catálogo incluye facilities y program_facilities para instalaciones/talleres, pero no existe una pantalla completa de alta y edición de esas entidades.
 
@@ -366,7 +362,7 @@ flowchart TD
   ACA_RPC --> ACA_STUD
 ```
 
-Las flechas de Coordinación representan operaciones posteriores a la aprobación, no efectos automáticos de registration_requests.
+Las flechas de Coordinación representan operaciones posteriores a la aprobación, no efectos automáticos de registration_requests. `/student` consulta `my_student_enrollments()` para mostrar solo sus grupos reales, incluso antes de que exista una ventana de evaluación; un alumno aprobado sin inscripciones ve un estado vacío. `/teacher` consulta únicamente sus asignaciones reales y presenta un estado vacío si todavía no tiene ninguna.
 
 ## 20. Evaluación docente
 
@@ -509,7 +505,7 @@ flowchart LR
 
 ## 29. Migraciones
 
-Las **13 migraciones** de supabase/migrations/ son incrementales. La tabla usa sus nombres reales; su orden numérico determina la evolución del esquema. Las migraciones antiguas no se reescriben para cambiar reglas posteriores.
+Las **15 migraciones** de supabase/migrations/ son incrementales. La tabla usa sus nombres reales; su orden numérico determina la evolución del esquema. Las migraciones antiguas no se reescriben para cambiar reglas posteriores.
 
 | Migración | Propósito principal |
 | --- | --- |
@@ -526,10 +522,14 @@ Las **13 migraciones** de supabase/migrations/ son incrementales. La tabla usa s
 | 20261010090956_academic_catalog_management.sql | Catálogo 7/21/63 y RPC de gestión académica. |
 | 20261010153000_teacher_assignment_context.sql | Campus y programa de la asignación propia del docente. |
 | 20261011044815_prevent_legacy_student_autogrant.sql | Elimina autogrant student en altas sin requested_role. |
+| 20261023192548_academic_subjects_catalog.sql | Incorpora 189 materias a 63 carreras públicas sin tocar QA. |
+| 20261023201302_coordinator_controlled_enrollment.sql | Alta sin materias, aprobación segura y consulta de inscripciones propias. |
 
 ## 30. Pruebas y validación
 
 La regresión final de PR #20 registró **103/103 pruebas Node**, **10/10 suites SQL**, **npm run lint PASS**, **npm run build PASS** y **git diff --check PASS**. Las diez suites SQL de supabase/tests/ cubren catálogo/gestión académica, recuperación de Coordinación, analíticas, dashboards, RLS multiinstitución, instalaciones, registro por rol, envío real del alumno, clasificación/reportes y resultados docentes. Sus fixtures se crean en transacciones que terminan en ROLLBACK; no requieren eliminar el escenario QA. Las pruebas Node incluyen Auth local, confirmación y recuperación, Turnstile, registro, escala, revisión/envío explícito, clasificación, privacidad y PDF.
+
+Para PR #25, la migración incremental se ensayó junto con 22 aserciones SQL en una transacción con ROLLBACK y luego se aplicó solo a Supabase local. Pasaron 12/12 suites SQL con ROLLBACK y 104/104 pruebas Node; lint, build y diff-check también pasaron. El escenario QA conservó 12 usuarios Auth, 7 instituciones, 21 campus, 63 carreras públicas, 189 materias importadas más dos QA, cinco evaluaciones, 75 respuestas y promedio 8.7/10. No se ejecutó db reset ni se modificó Supabase remoto.
 
 Estas cifras son evidencia de **validación local**, no pruebas de carga ni certificación de producción. La compilación pasó con la advertencia conocida de un chunk inicial superior a 500 kB. La [validación final](final-validation.md) distingue el estado PR #20 de evidencias históricas de etapas anteriores.
 

@@ -6,6 +6,7 @@ export function programsForCampus(snapshot: AcademicSnapshot, campusId: string) 
 export function subjectsForProgram(snapshot: AcademicSnapshot, programId: string) {
   return snapshot.subjects.filter((subject) => subject.program_id === programId && subject.active)
 }
-export function groupsForSubject(snapshot: AcademicSnapshot, subjectId: string) {
-  return snapshot.groups.filter((group) => group.subject_id === subjectId && group.active)
+export function groupsForSubject(snapshot: AcademicSnapshot, subjectId: string, periodId?: string) {
+  return snapshot.groups.filter((group) => group.subject_id === subjectId && group.active
+    && (!periodId || group.period_id === periodId))
 }

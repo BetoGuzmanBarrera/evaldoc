@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { test } from 'node:test'
 import { createClient } from '@supabase/supabase-js'
-import { availablePrograms, availableSubjects, validAcademicSelection } from '../src/lib/registrationForm.ts'
+import { availablePrograms, validAcademicSelection } from '../src/lib/registrationForm.ts'
 
 const envText = await readFile(new URL('../.env.local', import.meta.url), 'utf8')
 const env = Object.fromEntries(envText.split(/\r?\n/).filter((line) => line && !line.startsWith('#')).map((line) => {
@@ -73,45 +73,35 @@ test('programa QA y su materia histórica no aparecen en registro público', () 
   assert.equal(subjects.some((item) => item.name === 'Bases de Datos QA'), false)
 })
 
-test('no se pueden seleccionar materias de otro campus ni institución', () => {
+test('registro sin materias conserva aislamiento entre campus e instituciones', () => {
   const ipn = institutions.find((item) => item.slug === 'ipn')
   const unam = institutions.find((item) => item.slug === 'unam')
   assert.ok(ipn && unam)
   const ipnCampus = campuses.find((item) => item.institution_id === ipn.id)
+  const ipnProgram = programs.find((item) => item.campus_id === ipnCampus.id)
   const unamProgram = programs.find((item) => item.institution_id === unam.id)
-  assert.ok(ipnCampus && unamProgram)
-  assert.equal(availablePrograms(programs, ipnCampus.id).some((item) => item.id === unamProgram.id), false)
-  assert.equal(availableSubjects(subjects, programs, 'student', ipnCampus.id, unamProgram.id).length, 0)
+  assert.ok(ipnCampus && ipnProgram && unamProgram)
+  assert.equal(validAcademicSelection('student', ipn.id, ipnCampus.id, ipnProgram.id,
+    campuses, programs), true)
   assert.equal(validAcademicSelection('student', ipn.id, ipnCampus.id, unamProgram.id,
-    [], campuses, programs, subjects), false)
+    campuses, programs), false)
+  assert.equal(validAcademicSelection('teacher', ipn.id, ipnCampus.id, '',
+    campuses, []), true)
+  assert.equal(validAcademicSelection('teacher', ipn.id, ipnCampus.id, '',
+    [], []), false)
 })
 
-test('registro público muestra tres materias por carrera y nueve por campus docente', () => {
-  for (const institution of institutions) {
-    const ownCampuses = campuses.filter((item) => item.institution_id === institution.id)
-    for (const campus of ownCampuses) {
-      const ownPrograms = availablePrograms(programs, campus.id)
-      const teacherSubjects = availableSubjects(subjects, programs, 'teacher', campus.id, '')
-      assert.equal(teacherSubjects.length, 9, campus.name)
-      for (const program of ownPrograms) {
-        const studentSubjects = availableSubjects(subjects, programs, 'student', campus.id, program.id)
-        assert.equal(studentSubjects.length, 3, program.name)
-        assert.ok(studentSubjects.every((item) => item.institution_id === institution.id
-          && item.program_id === program.id))
-      }
-    }
+test('189 materias nuevas y QA se conservan sin exigirse en el alta', () => {
+  const imported = subjects.filter((item) =>
+    /^(IPN|UNAM|UVM|TEC|UAM|IBERO|ANAHUAC)-C[1-3]-P[1-3]-M[1-3]$/.test(item.code))
+  assert.equal(imported.length, 189)
+  assert.ok(subjects.some((item) => item.code === 'QA-BIOT-101'))
+  for (const program of programs) {
+    assert.equal(imported.filter((item) => item.program_id === program.id).length, 3)
   }
-})
-
-test('materia QA histórica Anáhuac Norte solo queda fuera del registro', () => {
-  const anahuac = institutions.find((item) => item.slug === 'universidad-anahuac')
-  assert.ok(anahuac)
-  const qaSubject = subjects.find((item) => item.code === 'QA-BIOT-101')
-  assert.ok(qaSubject, 'QA subject remains in the database and Coordination')
-  const program = programs.find((item) => item.id === qaSubject.program_id)
+  const campus = campuses[0]
+  const program = programs.find((item) => item.campus_id === campus.id)
   assert.ok(program)
-  const visible = availableSubjects(subjects, programs, 'student', program.campus_id, program.id)
-  assert.equal(visible.length, 3)
-  assert.ok(!visible.some((item) => item.id === qaSubject.id))
-  assert.ok(visible.every((item) => item.institution_id === anahuac.id))
+  assert.equal(validAcademicSelection('student', campus.institution_id, campus.id,
+    program.id, campuses, programs), true)
 })

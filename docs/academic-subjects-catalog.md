@@ -8,7 +8,7 @@ Origen: Excel EvalDoc_catalogo_7_universidades_63_carreras_189_materias.xlsx, ho
 - 54 materias en 18 carreras figuran como Materia en plan oficial consultado. Se contrastaron sus nombres con páginas o planes institucionales. No queda confirmada su oferta vigente en cada campus y periodo.
 - 135 materias en 45 carreras figuran como Propuesta temática (validar). Denominación exacta, inclusión en plan y oferta por sede/periodo requieren confirmación institucional.
 - Los códigos son deterministas e internos; no son claves oficiales.
-- QA-BIOT-101 se conserva en DB y Coordinación, pero se oculta solo en registro público. QA-BD01 y su programa histórico no público se conservan.
+- QA-BIOT-101 se conserva en DB y Coordinación; el registro público ya no muestra ni solicita ninguna materia. QA-BD01 y su programa histórico no público se conservan.
 
 ## Catálogo completo
 

@@ -165,9 +165,14 @@ begin
         base || pg_catalog.jsonb_build_object(
           'institutional_identifier','QA16-MISS','requested_role','teacher','requested_campus_id',campus_a::text,
           'requested_subject_ids',pg_catalog.jsonb_build_array()));
-    insert into qa_results values ('empty subject request rejected',false);
+    insert into qa_results values ('empty subject request accepted without subjects', exists (
+      select 1 from public.registration_requests r
+      join auth.users u on u.id=r.profile_id
+      where u.email='qa16.missing@example.test' and r.status='pending'
+        and not exists (select 1 from public.registration_request_subjects rs
+          where rs.request_id=r.id)));
   exception when others then
-    insert into qa_results values ('empty subject request rejected',true);
+    insert into qa_results values ('empty subject request accepted without subjects',false);
   end;
 
   update auth.users set raw_user_meta_data =
@@ -209,7 +214,7 @@ insert into qa_results values ('request table has no client writes',
 set local role authenticated;
 select set_config('request.jwt.claim.sub',(select id::text from qa_ids where name='coordinator_a'),true);
 insert into qa_results values ('coordinator list tenant scoped', (
-  select count(*) from public.institutional_pending_registration_requests())=3);
+  select count(*) from public.institutional_pending_registration_requests())=4);
 do $cross$
 begin
   begin
