@@ -65,4 +65,3 @@ end
 $tests$;
 select 'PR23 catalog, isolation, QA and RLS passed' as result;
 rollback;
-
