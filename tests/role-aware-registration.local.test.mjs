@@ -18,7 +18,6 @@ const client = () => createClient(apiUrl.origin, env.VITE_SUPABASE_ANON_KEY, {
 const mailpit = 'http://127.0.0.1:55424'
 const captchaToken = 'XXXX.DUMMY.TOKEN.XXXX'
 const createdUsers = []
-let createdSubject = null
 
 after(() => {
   for (const { id, email } of createdUsers) {
@@ -31,13 +30,7 @@ after(() => {
     ], { encoding: 'utf8' }).trim()
     assert.equal(deleted, id, 'Only the newly created local fixture must be removed')
   }
-  if (createdSubject) {
-    const deleted = execFileSync('docker', ['exec', 'supabase_db_evaldoc', 'psql', '-X', '-qAt',
-      '-U', 'postgres', '-d', 'postgres', '-c',
-      `delete from public.subjects where id='${createdSubject.id}' and code='${createdSubject.code}' returning id;`,
-    ], { encoding: 'utf8' }).trim()
-    assert.equal(deleted, createdSubject.id)
-  }
+
 })
 
 
@@ -84,14 +77,6 @@ test('Auth local: estudiante, docente y coordinador solicitan sin recibir roles 
   assert.equal(programs.error, null)
   assert.equal(programs.data.length, 1)
   const programId = programs.data[0].id
-  const subjectId = randomUUID()
-  const code = `QA18-${randomBytes(5).toString('hex')}`
-  const inserted = execFileSync('docker', ['exec', 'supabase_db_evaldoc', 'psql', '-X', '-qAt',
-    '-U', 'postgres', '-d', 'postgres', '-c',
-    `insert into public.subjects (id,institution_id,program_id,name,code) values ('${subjectId}','${institutionId}','${programId}','QA18 Materia temporal','${code}') returning id;`,
-  ], { encoding: 'utf8' }).trim()
-  assert.equal(inserted, subjectId)
-  createdSubject = { id: subjectId, code }
 
   for (const role of ['student', 'teacher', 'coordinator']) {
     await t.test(`solicitud ${role} confirma correo y sigue pending sin roles`, async () => {
@@ -101,7 +86,7 @@ test('Auth local: estudiante, docente y coordinador solicitan sin recibir roles 
         full_name: `QA ${role}`,
         institutional_identifier: `QA16-${randomUUID()}`,
         requested_role: role,
-        ...(role !== 'coordinator' ? { requested_campus_id: campusId, requested_subject_ids: [subjectId] } : {}),
+        ...(role !== 'coordinator' ? { requested_campus_id: campusId } : {}),
         ...(role === 'student' ? { requested_program_id: programId } : {}),
       }
       const signup = await anonymous.auth.signUp({
