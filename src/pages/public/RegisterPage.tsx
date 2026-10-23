@@ -8,8 +8,8 @@ import { TurnstileWidget, type TurnstileWidgetHandle } from '../../components/se
 import { Brand } from '../../components/ui/Brand'
 import { PasswordField } from '../../components/ui/PasswordField'
 import { useAuth } from '../../hooks/useAuth'
-import { loadRegistrationCatalog, type RegistrationCampus, type RegistrationProgram, type RegistrationSubject } from '../../lib/registrationCatalog'
-import { availablePrograms, availableSubjects, registrationCatalogEmptyMessage, registrationLabels, registrationMetadata, validAcademicSelection, type RequestedRole } from '../../lib/registrationForm'
+import { loadRegistrationCatalog, type RegistrationCampus, type RegistrationProgram } from '../../lib/registrationCatalog'
+import { availablePrograms, registrationCatalogEmptyMessage, registrationLabels, registrationMetadata, validAcademicSelection, type RequestedRole } from '../../lib/registrationForm'
 import { getRegistrationInstitutions, type RegistrationInstitution } from '../../lib/registrationInstitutions'
 import { supabase } from '../../lib/supabase'
 
@@ -20,13 +20,11 @@ export function RegisterPage() {
   const [institutionId, setInstitutionId] = useState('')
   const [campusId, setCampusId] = useState('')
   const [programId, setProgramId] = useState('')
-  const [subjectIds, setSubjectIds] = useState<string[]>([])
   const [institutions, setInstitutions] = useState<RegistrationInstitution[]>([])
   const [institutionsLoading, setInstitutionsLoading] = useState(true)
   const [institutionsError, setInstitutionsError] = useState('')
   const [campuses, setCampuses] = useState<RegistrationCampus[]>([])
   const [programs, setPrograms] = useState<RegistrationProgram[]>([])
-  const [subjects, setSubjects] = useState<RegistrationSubject[]>([])
   const [catalogLoading, setCatalogLoading] = useState(false)
   const [catalogError, setCatalogError] = useState('')
   const [catalogRevision, setCatalogRevision] = useState(0)
@@ -41,19 +39,16 @@ export function RegisterPage() {
   const passwordReady = meetsPasswordPolicy(password) && passwordsMatch(password, confirmation)
   const labels = registrationLabels(role)
   const visiblePrograms = availablePrograms(programs, campusId)
-  const visibleSubjects = availableSubjects(subjects, programs, role, campusId, programId)
-  const catalogEmptyMessage = registrationCatalogEmptyMessage(role, campuses, programs, subjects, campusId, programId)
+  const catalogEmptyMessage = registrationCatalogEmptyMessage(role, campuses, programs, campusId)
   const academicReady = (role === 'coordinator' || (!catalogLoading && !catalogError))
-    && validAcademicSelection(role, institutionId, campusId, programId, subjectIds, campuses, programs, subjects)
+    && validAcademicSelection(role, institutionId, campusId, programId, campuses, programs)
 
   const changeRole = (nextRole: RequestedRole) => {
     setRole(nextRole)
     setCampusId('')
     setProgramId('')
-    setSubjectIds([])
     setCampuses([])
     setPrograms([])
-    setSubjects([])
     setCatalogError('')
     setCatalogLoading(Boolean(institutionId) && nextRole !== 'coordinator')
   }
@@ -81,14 +76,12 @@ export function RegisterPage() {
       if (!active) return
       setCampuses(catalog.campuses)
       setPrograms(catalog.programs)
-      setSubjects(catalog.subjects)
       setCatalogError('')
       setCatalogLoading(false)
     }).catch(() => {
       if (!active) return
       setCampuses([])
       setPrograms([])
-      setSubjects([])
       setCatalogError('No pudimos cargar la oferta académica.')
       setCatalogLoading(false)
     })
@@ -114,7 +107,7 @@ export function RegisterPage() {
       return
     }
     if (!academicReady) {
-      setError(role === 'coordinator' ? 'Selecciona una institución válida para tu solicitud.' : 'Selecciona un programa y las materias válidas para tu solicitud.')
+      setError(role === 'coordinator' ? 'Selecciona una institución válida para tu solicitud.' : role === 'student' ? 'Selecciona un campus y una carrera válidos.' : 'Selecciona un campus válido.')
       return
     }
     if (!passwordReady) {
@@ -133,7 +126,7 @@ export function RegisterPage() {
         options: {
           captchaToken,
           emailRedirectTo: `${window.location.origin}/email-confirmation`,
-          data: registrationMetadata(role, institutionId, fullName, identifier, campusId, programId, subjectIds),
+          data: registrationMetadata(role, institutionId, fullName, identifier, campusId, programId),
         },
       })
       if (signUpError) {
@@ -171,8 +164,9 @@ export function RegisterPage() {
           </label>
         </fieldset>
         <label className="field"><span>Institución</span><select name="institution" required value={institutionId} disabled={institutionsLoading || institutions.length === 0} onChange={(event) => {
-          setInstitutionId(event.target.value); setCampusId(''); setProgramId(''); setSubjectIds([])
-          setCampuses([]); setPrograms([]); setSubjects([]); setCatalogError(''); setCatalogLoading(role !== 'coordinator')
+          if (event.target.value === institutionId) return
+          setInstitutionId(event.target.value); setCampusId(''); setProgramId('')
+          setCampuses([]); setPrograms([]); setCatalogError(''); setCatalogLoading(role !== 'coordinator')
         }}><option value="" disabled>{institutionsLoading ? 'Cargando instituciones…' : 'Selecciona tu institución'}</option>{institutions.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
         {institutionsError && <p className="form-error" role="alert">{institutionsError} <button className="text-button" type="button" onClick={() => {
           setInstitutionsError('')
@@ -180,34 +174,23 @@ export function RegisterPage() {
           getRegistrationInstitutions().then((items) => { setInstitutions(items); setInstitutionsLoading(false) }).catch(() => { setInstitutionsError('No pudimos cargar las instituciones. Inténtalo de nuevo.'); setInstitutionsLoading(false) })
         }}>Reintentar</button></p>}
         {role !== 'coordinator' && <label className="field"><span>Campus / sede</span><select value={campusId} required disabled={!institutionId || catalogLoading || campuses.length === 0} onChange={(event) => {
-          setCampusId(event.target.value); setProgramId(''); setSubjectIds([])
+          setCampusId(event.target.value); setProgramId('')
         }}><option value="" disabled>{catalogLoading ? 'Cargando campus…' : 'Selecciona tu campus'}</option>{campuses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>}
         <div className="form-grid">
           <label className="field"><span>Nombre completo</span><input name="fullName" autoComplete="name" placeholder="Nombre y apellidos" maxLength={120} required /></label>
           <label className="field"><span>Correo institucional</span><input name="email" type="email" autoComplete="email" placeholder="nombre@institucion.edu.mx" required /></label>
           <label className="field"><span>{labels.identifier}</span><input name="accountNumber" placeholder={role === 'student' ? 'Número de cuenta' : 'Número de empleado'} maxLength={64} required /></label>
           {role === 'student' && <label className="field"><span>Carrera / programa</span><select value={programId} onChange={(event) => {
-            setProgramId(event.target.value); setSubjectIds([])
+            setProgramId(event.target.value)
           }} required disabled={!campusId || catalogLoading || visiblePrograms.length === 0}>
             <option value="" disabled>{catalogLoading ? 'Cargando programas…' : 'Selecciona tu programa'}</option>
             {visiblePrograms.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}
           </select></label>}
         </div>
         {role !== 'coordinator' && institutionId && !catalogLoading && !catalogError && catalogEmptyMessage && <p className="registration-catalog-empty" role="status">{catalogEmptyMessage}</p>}
-        {institutionId && role !== 'coordinator' && !(catalogEmptyMessage && !catalogLoading && !catalogError) && <fieldset className="registration-subjects" disabled={catalogLoading || !campusId || (role === 'student' && !programId)}>
-          <legend>{labels.subjects} <span>(elige una o varias)</span></legend>
-          {catalogLoading ? <p role="status">Cargando materias…</p> : catalogError ? <p role="alert">{catalogError} <button type="button" className="text-button" onClick={() => {
-            setCatalogError(''); setCatalogLoading(true); setCatalogRevision((value) => value + 1)
-          }}>Reintentar</button></p> : visibleSubjects.length === 0
-            ? <p role="status">{catalogEmptyMessage ?? 'No hay materias disponibles para esta selección. Contacta a tu institución.'}</p>
-            : <div className="registration-subject-list">{visibleSubjects.map((subject) => <label key={subject.id}>
-              <input type="checkbox" checked={subjectIds.includes(subject.id)} onChange={(event) => {
-                setSubjectIds((current) => event.target.checked
-                  ? [...current, subject.id]
-                  : current.filter((id) => id !== subject.id))
-              }} /><span>{subject.name} <small>{subject.code}</small></span>
-            </label>)}</div>}
-        </fieldset>}
+        {catalogError && <p className="form-error" role="alert">{catalogError} <button className="text-button" type="button" onClick={() => {
+          setCatalogError(''); setCatalogLoading(true); setCatalogRevision((value) => value + 1)
+        }}>Reintentar</button></p>}
         <p className="registration-explanation">{labels.note}</p>
         <PasswordField label="Contraseña" name="password" value={password} onChange={setPassword} autoComplete="new-password" placeholder="Crea una contraseña segura" showRequirements />
         <PasswordField label="Confirmar contraseña" name="confirmPassword" value={confirmation} onChange={setConfirmation} autoComplete="new-password" placeholder="Repite tu contraseña" error={mismatch ? 'Las contraseñas no coinciden.' : undefined} />

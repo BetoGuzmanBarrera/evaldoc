@@ -16,8 +16,9 @@ const catalog = {
     { id: 'old', program_id: 'a', active: false },
   ],
   groups: [
-    { id: 'a1-g', subject_id: 'a1', active: true },
-    { id: 'b1-g', subject_id: 'b1', active: true },
+    { id: 'a1-g', subject_id: 'a1', period_id: '2026', active: true },
+    { id: 'a1-old', subject_id: 'a1', period_id: '2025', active: true },
+    { id: 'b1-g', subject_id: 'b1', period_id: '2026', active: true },
     { id: 'old', subject_id: 'a1', active: false },
   ],
 }
@@ -25,7 +26,8 @@ const catalog = {
 test('coordinación encadena sede, carrera, materia y grupo sin opciones incompatibles', () => {
   assert.deepEqual(programsForCampus(catalog, 'north').map((item) => item.id), ['a'])
   assert.deepEqual(subjectsForProgram(catalog, 'a').map((item) => item.id), ['a1'])
-  assert.deepEqual(groupsForSubject(catalog, 'a1').map((item) => item.id), ['a1-g'])
+  assert.deepEqual(groupsForSubject(catalog, 'a1', '2026').map((item) => item.id), ['a1-g'])
+  assert.deepEqual(groupsForSubject(catalog, 'a1', '2025').map((item) => item.id), ['a1-old'])
   assert.deepEqual(programsForCampus(catalog, 'other'), [])
   assert.deepEqual(subjectsForProgram(catalog, 'b').map((item) => item.id), ['b1'])
   assert.deepEqual(groupsForSubject(catalog, 'b1').map((item) => item.id), ['b1-g'])

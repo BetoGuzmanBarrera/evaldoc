@@ -1,4 +1,4 @@
-# Registro por rol y coordinación institucional (PR #16–17)
+# Registro por rol y coordinación institucional (PR #16–17 y #25)
 
 El coordinador es el responsable académico cotidiano de su institución: revisa solicitudes de estudiante y docente, sigue indicadores, aplica filtros y descarga reportes institucionales ya autorizados. Admin permanece como rol técnico para bootstrap, mantenimiento y aprobación de solicitudes de coordinación. No se elimina admin del esquema ni se amplían permisos de lectura de evaluaciones individuales.
 
@@ -6,11 +6,11 @@ El coordinador es el responsable académico cotidiano de su institución: revisa
 
 /register muestra las siete instituciones activas, tengan o no catálogo académico. La selección de Estudiante, Docente o Coordinador representa una solicitud, nunca un rol concedido desde el navegador. El formulario pide contraseña con la política vigente, confirmación, términos y Turnstile; Supabase Auth exige confirmar el correo. El trigger app_private.handle_new_evaldoc_user() crea un perfil pending y una fila de registration_requests, sin insertar user_roles para solicitudes explícitas.
 
-- Estudiante: número de cuenta, campus, carrera pública activa de esa sede y materias activas compatibles. Sin materia disponible no puede enviar la solicitud.
-- Docente: número de empleado, campus y materias activas de carreras de esa sede. Si no hay materias, no puede enviar la solicitud.
+- Estudiante: número de cuenta, campus y carrera pública activa de esa sede. Puede solicitar la cuenta aunque esa carrera aún no tenga materias.
+- Docente: número de empleado y campus. Puede solicitar la cuenta aunque ese campus aún no tenga carreras o materias.
 - Coordinador: número de empleado, sin programa ni materias. El mensaje indica: «Tu institución deberá validar tu solicitud de coordinación». Puede solicitar cuenta aunque la institución aún no tenga oferta académica cargada.
 
-registration_requests.campus_id y registration_request_subjects guardan la sede y las materias solicitadas de estudiantes y docentes. El trigger vuelve a comprobar institución, campus, programa, materias y tipo solicitado. Rechaza admin y hr como solicitudes públicas; para coordinador rechaza cualquier selección académica. raw_user_meta_data es transporte no confiable y el trigger elimina los campos de solicitud tras normalizarlos. Enviar role o roles, o editar metadata después, no otorga privilegios.
+registration_requests.campus_id guarda la sede solicitada; registration_request_subjects conserva las materias de solicitudes históricas, pero las altas nuevas no insertan filas allí. El trigger comprueba institución, campus, programa cuando corresponde y tipo solicitado. requested_subject_ids ausente o vacío es válido; una lista histórica no vacía sigue validándose. Rechaza admin y hr como solicitudes públicas; para coordinador rechaza cualquier selección académica. raw_user_meta_data es transporte no confiable y el trigger elimina los campos de solicitud tras normalizarlos. Enviar role o roles, o editar metadata después, no otorga privilegios.
 
 ## Decisiones y aislamiento
 

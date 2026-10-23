@@ -70,14 +70,14 @@ export function AcademicManagementPanel({ onChanged }: { onChanged: () => void }
   }
   const programs = data ? programsForCampus(data, campusId) : []
   const subjects = data ? subjectsForProgram(data, programId) : []
-  const groups = data ? groupsForSubject(data, subjectId).map((group) => ({
+  const groups = data ? groupsForSubject(data, subjectId, periodId).map((group) => ({
     id: group.id, name: group.code,
   })) : []
   const activePeriods = data?.periods.filter((period) => period.active) ?? []
   const allSubjects = data?.subjects.filter((subject) => subject.program_id === programId) ?? []
   const allGroups = data?.groups.filter((group) => group.subject_id === subjectId) ?? []
   const clearBelowCampus = (id: string) => {
-    setCampusId(id); setProgramId(''); setSubjectId(''); setGroupId(''); setEditing(null)
+    setCampusId(id); setProgramId(''); setSubjectId(''); setPeriodId(''); setGroupId(''); setEditing(null)
   }
   const clearBelowProgram = (id: string) => {
     setProgramId(id); setSubjectId(''); setGroupId(''); setEditing(null)
@@ -85,7 +85,7 @@ export function AcademicManagementPanel({ onChanged }: { onChanged: () => void }
 
   return <section className="academic-management" aria-labelledby="academic-management-title">
     <div><h2 id="academic-management-title" className="institutional-section-title">Gestión académica</h2>
-      <p className="academic-help">Campus → carrera → materia → grupo → docente y alumno. Las solicitudes aprobadas no crean asignaciones ni inscripciones automáticamente.</p></div>
+      <p className="academic-help">Campus → carrera → periodo → materia → grupo → docente o alumno. Solo Coordinación crea asignaciones e inscripciones después de aprobar la cuenta.</p></div>
     {loading && <p role="status">Cargando estructura académica…</p>}
     {error && <p className="form-error" role="alert">{error}</p>}
     {notice && <p className="form-note" role="status">{notice}</p>}
@@ -103,14 +103,15 @@ export function AcademicManagementPanel({ onChanged }: { onChanged: () => void }
             options={data.campuses.filter((campus) => campus.active)} />
           <Choice label="Carrera" value={programId} onChange={clearBelowProgram}
             options={programs} disabled={!campusId} />
+          <Choice label="Periodo" value={periodId} onChange={(id) => { setPeriodId(id); setGroupId('') }} options={activePeriods} disabled={!campusId} />
           <Choice label="Materia" value={subjectId} onChange={(id) => { setSubjectId(id); setGroupId('') }}
             options={subjects} disabled={!programId} />
           <Choice label="Grupo" value={groupId} onChange={setGroupId}
-            options={groups} disabled={!subjectId} />
+            options={groups} disabled={!subjectId || !periodId} />
         </div>
         {campusId && programs.length === 0 && <p role="status">Este campus aún no tiene carreras configuradas.</p>}
         {programId && subjects.length === 0 && <p role="status">Esta carrera aún no tiene materias configuradas.</p>}
-        {subjectId && groups.length === 0 && <p role="status">Esta materia aún no tiene grupos activos.</p>}
+        {subjectId && periodId && groups.length === 0 && <p role="status">Esta materia aún no tiene grupos activos en el periodo seleccionado.</p>}
       </div>
       <div className="academic-management-grid">
         <section className="surface academic-workspace" aria-labelledby="academic-subjects">
@@ -146,7 +147,6 @@ export function AcademicManagementPanel({ onChanged }: { onChanged: () => void }
           </form>
           <form className="academic-form" onSubmit={(event) => submit(event,
             { kind: 'group-create', subjectId, periodId, code: groupCode }, 'Grupo creado.')}>
-            <Choice label="Periodo" value={periodId} onChange={setPeriodId} options={activePeriods} />
             <label className="field"><span>Código del grupo</span><input value={groupCode} onChange={(event) => setGroupCode(event.target.value)} maxLength={40} required /></label>
             <button className="button button-primary" disabled={busy || !subjectId || !periodId}>Crear grupo</button>
           </form>
