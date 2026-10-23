@@ -33,7 +33,9 @@ export function availableSubjects(
 ): RegistrationSubject[] {
   if (role === 'coordinator') return []
   const programIds = new Set(availablePrograms(programs, campusId).map((item) => item.id))
-  return subjects.filter((subject) => programIds.has(subject.program_id)
+  // Historical QA subject stays available to Coordination, but is not public registration stock.
+  return subjects.filter((subject) => subject.code !== 'QA-BIOT-101'
+    && programIds.has(subject.program_id)
     && (role === 'teacher' || subject.program_id === programId))
 }
 
