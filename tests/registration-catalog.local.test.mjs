@@ -85,3 +85,33 @@ test('no se pueden seleccionar materias de otro campus ni institución', () => {
   assert.equal(validAcademicSelection('student', ipn.id, ipnCampus.id, unamProgram.id,
     [], campuses, programs, subjects), false)
 })
+
+test('registro público muestra tres materias por carrera y nueve por campus docente', () => {
+  for (const institution of institutions) {
+    const ownCampuses = campuses.filter((item) => item.institution_id === institution.id)
+    for (const campus of ownCampuses) {
+      const ownPrograms = availablePrograms(programs, campus.id)
+      const teacherSubjects = availableSubjects(subjects, programs, 'teacher', campus.id, '')
+      assert.equal(teacherSubjects.length, 9, campus.name)
+      for (const program of ownPrograms) {
+        const studentSubjects = availableSubjects(subjects, programs, 'student', campus.id, program.id)
+        assert.equal(studentSubjects.length, 3, program.name)
+        assert.ok(studentSubjects.every((item) => item.institution_id === institution.id
+          && item.program_id === program.id))
+      }
+    }
+  }
+})
+
+test('materia QA histórica Anáhuac Norte solo queda fuera del registro', () => {
+  const anahuac = institutions.find((item) => item.slug === 'universidad-anahuac')
+  assert.ok(anahuac)
+  const qaSubject = subjects.find((item) => item.code === 'QA-BIOT-101')
+  assert.ok(qaSubject, 'QA subject remains in the database and Coordination')
+  const program = programs.find((item) => item.id === qaSubject.program_id)
+  assert.ok(program)
+  const visible = availableSubjects(subjects, programs, 'student', program.campus_id, program.id)
+  assert.equal(visible.length, 3)
+  assert.ok(!visible.some((item) => item.id === qaSubject.id))
+  assert.ok(visible.every((item) => item.institution_id === anahuac.id))
+})
